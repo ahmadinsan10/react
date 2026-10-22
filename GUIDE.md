@@ -40,6 +40,9 @@ You write every line yourself.
 - Don't jump to libraries early. Build things by hand first (your own fetch hook, your own form state), and only then adopt the library that solves it. That's how you learn *why* the library exists.
 - After each project, write a short `NOTES.md` in its folder: what was hard, what you'd do differently. This makes the learning stick.
 
+- Topics marked **(stretch)** are optional. Skim them, note they exist, and come back later. Don't let them block your progress.
+- **Versions move fast.** Before starting a level, check react.dev and the docs of each library for the current major version. Level 10 (Next.js) changes the most often.
+
 **Rough timeline (part-time, ~10 h/week):** Levels 0–4 ≈ 3 months · Levels 5–8 ≈ 3 months · Levels 9–12 ≈ 3–6 months, plus ongoing practice.
 
 ---
@@ -63,6 +66,13 @@ You write every line yourself.
 
 React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 
+**Can you skip this level?** Try these without looking anything up. If all are easy, go straight to Level 1.
+- Given an array of orders, use `reduce` to group them by customer into an object.
+- Update a nested object (`user.address.city`) without mutating the original.
+- Explain what this logs and why: a `for` loop with `var i` that schedules `setTimeout(() => console.log(i))` three times.
+- Write an `async` function that fetches two URLs in parallel, handles errors, and can be cancelled with `AbortController`.
+- Explain why `[1, 2] === [1, 2]` is `false`.
+
 **Learn:**
 1. **Modern syntax:** `let`/`const`, arrow functions, template literals, destructuring, spread/rest, optional chaining (`?.`), nullish coalescing (`??`), ES modules (`import`/`export`).
 2. **Arrays (must be fluent):** `map`, `filter`, `reduce`, `find`, `some`, `every`, `sort` (and why it mutates), `toSorted`, `slice` vs `splice`.
@@ -83,7 +93,12 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 
 ## Level 1 — React Fundamentals
 
-**Setup:** install Node.js LTS, then create a project with **Vite** using its React + TypeScript template (`npm create vite@latest`). Start in `.tsx` files but keep types light until Level 3.
+**Setup:**
+1. Install Node.js LTS.
+2. Create a project with **Vite** (`npm create vite@latest`) using the **React + TypeScript** template.
+3. Use TypeScript loosely until Level 3: type props with simple inline types and let inference do the rest. Don't fight the type checker yet. Level 3 tightens everything.
+4. Enable the **React Compiler** (follow the "React Compiler → Installation" page on react.dev for Vite). It automatically memoizes components and values, so you can write plain code without `useMemo`/`useCallback` from day one.
+5. Set up **ESLint** with the flat config (`eslint.config.js`, which the Vite template already uses) and make sure **`eslint-plugin-react-hooks`** is enabled with its recommended config. In current versions, this plugin also includes the React Compiler's rules and flags code the compiler can't optimize (impure renders, mutating props, and so on). Treat its warnings as lessons.
 
 **Learn** (react.dev → *Learn* section, in order):
 1. **Thinking in React:** break a UI mockup into a component tree; decide where state lives.
@@ -118,7 +133,7 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 3. **`useRef`:** DOM access, and storing mutable values that shouldn't trigger renders. Learn refs vs state.
 4. **`useReducer`:** when state transitions get complex. Write reducers as pure functions and model actions as a discriminated union.
 5. **`useContext`:** avoid prop drilling, provider patterns, and the cost (every consumer re-renders).
-6. **`useMemo` / `useCallback`:** what they actually do, when they help, and when they're pointless. Know that the **React Compiler** can automate much of this.
+6. **`useMemo` / `useCallback` / `memo`:** learn what they do, because you'll read them in existing codebases. With the **React Compiler** enabled you rarely write them yourself. Use them manually only when the compiler can't optimize a component (the ESLint plugin tells you), or when you need a stable reference for a specific reason, such as an effect dependency.
 7. **`useId`, `useLayoutEffect`, `useImperativeHandle`, `useSyncExternalStore`:** know when each is the right tool.
 8. **React 19 hooks:** `use`, `useActionState`, `useFormStatus`, `useOptimistic`, `useTransition`, `useDeferredValue`.
 9. **Rules of Hooks**, and *why* they exist (hooks are tracked by call order).
@@ -163,7 +178,7 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 5. **Accessibility in forms:** labels, `aria-describedby` for errors, focus management on submit errors.
 6. **Auth flows on the client:** where to store tokens (and why httpOnly cookies beat `localStorage`), redirect after login.
 
-**Build:** a **Movie / Book catalog** (e.g. TMDB or Open Library API), or a client for the Rust backend from `rust-dekstop/BACKEND_GUIDE.md`:
+**Build:** a **Movie / Book catalog** (e.g. TMDB or Open Library API), or a frontend for the Tasks API from your [Rust backend guide](https://github.com/ahmadinsan10/rust-dekstop/blob/main/BACKEND_GUIDE.md):
 - list page with search, filters and pagination **stored in the URL**,
 - detail page with nested routes (overview / reviews tabs),
 - a "favorites" feature with optimistic updates,
@@ -180,8 +195,8 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 **Learn:**
 1. **Where state should live**, from closest to widest: local → lifted → URL → context → external store → server cache. Always choose the closest that works.
 2. **Context performance:** splitting contexts, separating state and dispatch contexts, memoizing provider values.
-3. **External stores:** **Zustand** (simple and recommended), **Redux Toolkit** (still common in enterprise codebases; learn slices, RTK Query and selectors), **Jotai** (atomic state). Learn one deeply and know the trade-offs of the others.
-4. **State machines** with **XState** for complex flows (wizards, checkout, media players).
+3. **External stores:** learn **Zustand** deeply (simple and recommended). Learn **Redux Toolkit** well enough to work in existing codebases, since it's still common in enterprise apps: slices, selectors and RTK Query. **(stretch)** **Jotai** (atomic state).
+4. **(stretch) State machines** with **XState** for complex flows (wizards, checkout, media players). You can model the checkout below with `useReducer` and a discriminated union instead.
 5. **Project structure:** feature-based folders (`features/auth`, `features/cart`) instead of type-based (`components/`, `hooks/`). Use public APIs (`index.ts`) per feature and clear import boundaries.
 6. **Separation of concerns:** UI components vs data hooks vs pure domain logic (testable without React).
 7. **Dependency direction:** shared UI never imports from features. Enforce it with ESLint rules (e.g. `eslint-plugin-boundaries`).
@@ -189,7 +204,7 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 **Build:** an **E-commerce store** (use the FakeStore API or DummyJSON):
 - product catalog (TanStack Query),
 - cart (Zustand, persisted),
-- multi-step checkout modeled as a **state machine**,
+- multi-step checkout modeled as a **state machine** (`useReducer`, or XState if you did the stretch topic),
 - filters in the URL,
 - a feature-based folder structure with enforced boundaries.
 
@@ -252,10 +267,10 @@ Then **rewrite the cart with Redux Toolkit** in a branch and compare. Write down
 1. **Measure first:** the React DevTools **Profiler** ("why did this render?"), the Chrome Performance panel, Lighthouse, and **Core Web Vitals** (LCP, INP, CLS).
 2. **Re-render causes:** state changes, parent re-renders, context changes. Learn that "re-render" ≠ "DOM update".
 3. **Fixes, in order of preference:**
+   - make sure the **React Compiler** is actually optimizing the slow component (the DevTools show a "Memo ✨" badge on compiled components; the ESLint plugin explains why one was skipped). Fix the code so it compiles, instead of adding manual memoization,
    - move state down / lift content up (pass components as `children`),
    - split context,
-   - `memo`, `useMemo`, `useCallback` where profiling shows a benefit,
-   - adopt the **React Compiler** and understand what it does.
+   - manual `memo`, `useMemo`, `useCallback` only for cases the compiler can't handle, and only where profiling shows a benefit.
 4. **Concurrent features:** `useTransition` and `useDeferredValue` to keep input responsive during heavy renders.
 5. **Large lists:** virtualization (**TanStack Virtual**).
 6. **Bundle size:** code splitting with `lazy` + `Suspense`, route-based splitting, analyzing the bundle (`rollup-plugin-visualizer`), tree-shaking, avoiding heavy dependencies.
@@ -267,7 +282,7 @@ Then **rewrite the cart with Redux Toolkit** in a branch and compare. Write down
 2. Optimize step by step, recording before/after numbers for each change in `NOTES.md`.
 3. Target: typing in search stays smooth (INP < 200 ms) on a throttled CPU (4× slowdown in DevTools).
 
-✅ **Checkpoint:** you can show profiler evidence for each optimization you made, and you removed memoization that didn't help.
+✅ **Checkpoint:** you can show profiler evidence for each optimization you made, and you have no manual memoization that the compiler already covers.
 
 ---
 
@@ -300,8 +315,17 @@ This is what separates experts from advanced users: knowing *why*, not just *how
 1. **Rendering strategies:** CSR, SSR, SSG, ISR, streaming, and partial prerendering. Know when to use each.
 2. **React Server Components:** server vs client components, the `'use client'` boundary, passing server components as `children` to client components, and what can't be serialized.
 3. **Server Functions / Actions** (`'use server'`): mutations, revalidation, progressive enhancement, and their **security implications** (they are public endpoints, so validate and authorize every call).
-4. **Next.js App Router:** layouts, loading/error/not-found files, route groups, parallel and intercepting routes, metadata/SEO, the `Image` and `Font` components, middleware.
-5. **Caching in Next.js:** request memoization, data cache, full-route cache, router cache, and revalidation (`revalidatePath` / `revalidateTag`). This is the hardest part, so experiment until it's clear.
+> **Check versions first.** Next.js changes faster than anything else in this guide. Read the release notes for the current major version before starting. The points below describe Next.js 16.
+
+4. **Next.js App Router:** layouts, loading/error/not-found files, route groups, parallel and intercepting routes, metadata/SEO, the `Image` and `Font` components, and **`proxy.ts`** (called `middleware.ts` before Next.js 16; you'll still see the old name in tutorials and older projects).
+5. **Caching with Cache Components:** in current Next.js, everything is **dynamic by default** and you opt in to caching explicitly:
+   - enable Cache Components in `next.config`,
+   - mark cached functions, components or pages with the **`'use cache'`** directive,
+   - control lifetime with **`cacheLife`** and tag entries with **`cacheTag`**,
+   - invalidate with `revalidateTag` / `updateTag` after mutations,
+   - wrap uncached dynamic parts in `<Suspense>` so the static shell streams first (**Partial Prerendering**).
+
+   Older tutorials describe four implicit cache layers (request memoization, data cache, full-route cache, router cache) and `fetch` caching options. Recognize that model when you meet it in existing code, but learn the explicit `'use cache'` model first. This is the hardest part of Next.js, so experiment until it's clear.
 6. **Data layer:** an ORM (Prisma or Drizzle) with Postgres, and auth (Auth.js or Better Auth).
 7. Alternatives worth knowing: **React Router v7 framework mode** (formerly Remix) and **TanStack Start**.
 
@@ -313,27 +337,27 @@ This is what separates experts from advanced users: knowing *why*, not just *how
 - SEO metadata and Open Graph images,
 - deployed to Vercel (or self-hosted with Docker).
 
-✅ **Checkpoint:** you can explain, for any piece of your UI, whether it renders on the server or the client and why, and when its data gets refreshed.
+✅ **Checkpoint:** you can explain, for any piece of your UI, whether it renders on the server or the client and why, whether it's cached (`'use cache'`) or dynamic, and which tag invalidates it.
 
 ---
 
 ## Level 11 — Production Engineering
 
 **Learn:**
-1. **Code quality:** ESLint (with `eslint-plugin-react-hooks` and `jsx-a11y`), Prettier (or Biome), strict TS, Husky + lint-staged pre-commit hooks.
+1. **Code quality:** ESLint flat config shared across the monorepo (`eslint-plugin-react-hooks` with the compiler rules, `jsx-a11y`), Prettier (or Biome), strict TS, Husky + lint-staged pre-commit hooks.
 2. **CI/CD:** lint → type-check → test → build → preview deploys per pull request.
 3. **Error handling:** error boundaries (at route and widget level), reporting with **Sentry**, user-friendly fallbacks.
 4. **Observability:** Real User Monitoring of Web Vitals, analytics, feature flags.
 5. **Security:** XSS (and why `dangerouslySetInnerHTML` is dangerous), sanitization (DOMPurify), Content Security Policy, CSRF, secrets never in client bundles, dependency auditing (`npm audit`, Renovate/Dependabot).
 6. **Internationalization:** react-intl or i18next, pluralization, date/number formatting, right-to-left layouts.
-7. **PWA & offline:** service workers, caching strategies.
-8. **Monorepos:** pnpm workspaces + **Turborepo** (or Nx) for sharing a UI library across apps.
-9. **Micro-frontends** (Module Federation): know when they're worth the complexity, which is rarely.
-10. **React Native** basics: the same React mental model on mobile (Expo).
+7. **Monorepos:** pnpm workspaces + **Turborepo** (or Nx) for sharing a UI library across apps.
+8. **(stretch) PWA & offline:** service workers, caching strategies.
+9. **(stretch) Micro-frontends** (Module Federation): know when they're worth the complexity, which is rarely.
+10. **(stretch) React Native** basics: the same React mental model on mobile (Expo).
 
 **Build:** turn your Next.js app into a production-grade monorepo:
 - `apps/web` (Next.js), `apps/docs` (Storybook), `packages/ui` (your design system from Level 6), `packages/config` (shared ESLint/TS configs),
-- Sentry, i18n (English + Bahasa Indonesia), a CSP header, Renovate,
+- Sentry, i18n (English plus a second language of your choice; if possible, pick one with different plural rules or a right-to-left script to test your setup properly), a CSP header, Renovate,
 - full CI with preview deployments.
 
 ✅ **Checkpoint:** a new developer can clone the repo, run one command, and have everything working; every PR is automatically checked.
@@ -413,7 +437,7 @@ You're an expert when you can confidently:
 | Array index as key for dynamic lists | Stable unique IDs |
 | Giant components (500+ lines) | Split by responsibility; extract hooks |
 | One huge global context | Split contexts, or use an external store with selectors |
-| `memo`/`useCallback` everywhere "just in case" | Profile first, or let the React Compiler handle it |
+| `memo`/`useCallback` everywhere "just in case" | Enable the React Compiler and keep components pure; memoize manually only where profiling shows a need |
 | Storing tokens in `localStorage` | httpOnly, Secure, SameSite cookies |
 | `div` with `onClick` as a button | Use `<button>`; semantic HTML first |
 | Testing implementation details | Test what the user sees and does |
