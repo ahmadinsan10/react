@@ -420,3 +420,13 @@ body.nav-locked { overflow: hidden; }
 }
 @media (max-width: 640px) { .lesson h1 { font-size: 1.5rem; } .lesson-prose { font-size: 0.98rem; } }
 .ex-tabs .btn { white-space: normal; text-align: left; max-width: 100%; }
+
+/* Drawer header: close button only in drawer mode */
+.brand-row { display: flex; align-items: center; justify-content: space-between; }
+.drawer-close { display: none; }
+@media (max-width: 900px) {
+  .drawer-close { display: inline-flex; }
+  .sidebar { height: 100dvh; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .scrim { z-index: 45; }
+}
+.shell.collapsed .brand-row { justify-content: center; }

@@ -66,15 +66,37 @@ export function Layout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Mobile drawer: lock background scroll and close on Escape.
+  // Track whether we're in drawer mode (must match the 900px breakpoint in styles.css).
+  const [isDrawer, setIsDrawer] = useState(() => window.matchMedia('(max-width: 900px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)')
+    const onChange = () => {
+      setIsDrawer(mq.matches)
+      // Rotating/resizing to desktop with the drawer open would otherwise leave scroll locked.
+      if (!mq.matches) setNavOpen(false)
+    }
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  // Drawer behaves like a modal: lock background scroll, Escape closes,
+  // focus moves into it on open and back to whatever opened it on close.
+  const openerRef = useRef<HTMLElement | null>(null)
+  const openNav = () => {
+    openerRef.current = document.activeElement as HTMLElement | null
+    setNavOpen(true)
+  }
   useEffect(() => {
     if (!navOpen) return
     document.body.classList.add('nav-locked')
+    sidebarRef.current?.querySelector<HTMLElement>('.drawer-close')?.focus()
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setNavOpen(false)
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.classList.remove('nav-locked')
       window.removeEventListener('keydown', onKey)
+      // Restore focus only if it's still inside the drawer (not when a link navigated elsewhere).
+      if (sidebarRef.current?.contains(document.activeElement)) openerRef.current?.focus()
     }
   }, [navOpen])
 
@@ -119,10 +141,23 @@ export function Layout() {
         Skip to content
       </a>
       {navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
-      <aside ref={sidebarRef} className={`sidebar${navOpen ? ' open' : ''}`} aria-label="Main navigation">
-        <Link to="/" className="brand" title="React Mastery">
-          <Logo /> <span className="brand-text">React Mastery</span>
-        </Link>
+      <aside
+        ref={sidebarRef}
+        id="main-nav"
+        className={`sidebar${navOpen ? ' open' : ''}`}
+        aria-label="Main navigation"
+        // A closed drawer is only slid off-screen: make it unreachable by Tab and screen readers.
+        inert={isDrawer && !navOpen}
+        {...(isDrawer && navOpen ? { role: 'dialog', 'aria-modal': true } : {})}
+      >
+        <div className="brand-row">
+          <Link to="/" className="brand" title="React Mastery">
+            <Logo /> <span className="brand-text">React Mastery</span>
+          </Link>
+          <button className="btn ghost icon-btn drawer-close" onClick={() => setNavOpen(false)} aria-label="Close navigation">
+            <Icon name="close" />
+          </button>
+        </div>
         <NavLink to="/" end className="nav-link" title="Dashboard">
           <Icon name="home" /> <span className="label">Dashboard</span>
         </NavLink>
@@ -174,7 +209,7 @@ export function Layout() {
       </aside>
       <div className="main">
         <header className="topbar">
-          <button className="btn ghost icon-btn menu-btn" onClick={() => setNavOpen(true)} aria-label="Open navigation">
+          <button className="btn ghost icon-btn menu-btn" onClick={openNav} aria-label="Open navigation" aria-expanded={navOpen} aria-controls="main-nav">
             <Icon name="menu" />
           </button>
           <button className="search-btn" onClick={() => setPaletteOpen(true)}>
@@ -204,7 +239,7 @@ export function Layout() {
           <Icon name="brain" /> Review
           {due > 0 && <span className="badge">{due}</span>}
         </NavLink>
-        <button onClick={() => setNavOpen(true)} aria-label="Open full menu">
+        <button onClick={openNav} aria-label="Open full menu" aria-expanded={navOpen} aria-controls="main-nav">
           <Icon name="menu" /> Levels
         </button>
       </nav>
