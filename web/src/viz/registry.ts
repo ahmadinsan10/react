@@ -20,7 +20,9 @@ export const VIZ: VizMeta[] = [
   { id: 'stale-closure', title: 'Stale Closures', level: 2, kind: 'Live React', summary: 'Timers that capture old state, and the ref and updater fixes.', Component: lazy(() => import('./StaleClosure')) },
   { id: 'race-condition', title: 'Fetch Race Conditions', level: 2, kind: 'Live React', summary: 'Type fast and watch slow responses overwrite newer ones — then fix it with cleanup.', Component: lazy(() => import('./RaceCondition')) },
   { id: 'ui-states', title: 'Impossible UI States', level: 3, kind: 'Interactive', summary: 'Booleans vs a discriminated union, as a clickable state machine.', Component: lazy(() => import('./UiStates')) },
+  { id: 'query-cache', title: 'Inside a Query Cache', level: 4, kind: 'Interactive', summary: 'Mount components, tune staleTime and gcTime, and watch dedupe, refetch-on-focus and invalidation happen.', Component: lazy(() => import('./QueryCache')) },
   { id: 'state-placement', title: 'Where Should State Live?', level: 5, kind: 'Interactive', summary: 'A decision tree that classifies any piece of state into the right home.', Component: lazy(() => import('./StatePlacement')) },
+  { id: 'focus-trap', title: 'Accessible Dialog Focus', level: 6, kind: 'Live React', summary: 'Turn focus management features on one by one and watch a live focus log as you Tab through a dialog.', Component: lazy(() => import('./FocusTrap')) },
   { id: 'testing-trophy', title: 'The Testing Trophy', level: 7, kind: 'Interactive', summary: 'What each layer of testing is for, and how much of each to write.', Component: lazy(() => import('./TestingTrophy')) },
   { id: 'transition', title: 'useTransition vs Blocking', level: 8, kind: 'Live React', summary: 'Measure real input lag on a slow list with normal updates, transitions and deferred values.', Component: lazy(() => import('./Transition')) },
   { id: 'virtual-list', title: 'List Virtualization', level: 8, kind: 'Live React', summary: '30,000 rows: compare DOM node counts and render time with and without virtualization.', Component: lazy(() => import('./VirtualList')) },
@@ -28,6 +30,7 @@ export const VIZ: VizMeta[] = [
   { id: 'hooks-list', title: 'Hooks as a Linked List', level: 9, kind: 'Interactive', summary: 'Why calling a hook conditionally hands every later hook the wrong state.', Component: lazy(() => import('./HooksList')) },
   { id: 'rendering-strategies', title: 'Rendering Strategies', level: 10, kind: 'Animated', summary: 'CSR, SSR, SSG, streaming and PPR on a timeline: when content appears and when it becomes interactive.', Component: lazy(() => import('./RenderingStrategies')) },
   { id: 'rsc-boundary', title: "The 'use client' Boundary", level: 10, kind: 'Interactive', summary: 'Move the client boundary around a component tree and watch bundle size and build errors.', Component: lazy(() => import('./RscBoundary')) },
+  { id: 'xss', title: 'XSS & dangerouslySetInnerHTML', level: 11, kind: 'Live React', summary: 'Paste attack payloads and compare React escaping, raw HTML (safely sandboxed) and an allowlist sanitizer.', Component: lazy(() => import('./Xss')) },
 ]
 
 export const vizById = (id: string) => VIZ.find(v => v.id === id)

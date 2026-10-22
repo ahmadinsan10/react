@@ -10,7 +10,10 @@ import { Review, Exam } from './pages/Review'
 import { Checklist } from './pages/Checklist'
 import { Settings } from './pages/Settings'
 import { NotFound } from './pages/NotFound'
+import { startAutoSync } from './sync/client'
 import './styles.css'
+
+startAutoSync()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -32,3 +35,8 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Offline support in production only (the dev server's module graph shouldn't be cached).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js'))
+}

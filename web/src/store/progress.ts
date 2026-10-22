@@ -24,14 +24,31 @@ function persist() {
   }
 }
 
+const changeHooks = new Set<() => void>()
+/** Lets the sync engine react to local edits without the store depending on it. */
+export const onLocalChange = (fn: () => void) => {
+  changeHooks.add(fn)
+  return () => changeHooks.delete(fn)
+}
+
 export function setProgress(update: (p: Progress) => Progress) {
-  state = update(state)
+  const next = update(state)
+  if (next === state) return
+  state = { ...next, updatedAt: Date.now() }
   persist()
   listeners.forEach(l => l())
+  changeHooks.forEach(h => h())
 }
 
 export function replaceProgress(p: Progress) {
   setProgress(() => p)
+}
+
+/** Apply data that came from sync: no change hooks (avoids sync echo loops). */
+export function applyRemoteProgress(p: Progress) {
+  state = p
+  persist()
+  listeners.forEach(l => l())
 }
 
 function subscribe(listener: () => void) {

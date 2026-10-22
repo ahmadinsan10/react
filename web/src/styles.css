@@ -95,7 +95,8 @@ p { margin: 0 0 0.8em; }
 code { font-family: var(--mono); font-size: 0.88em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 5px; border: 1px solid var(--border); }
 pre { font-family: var(--mono); font-size: 0.85rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; line-height: 1.5; margin: 0 0 1em; }
 pre code { background: none; border: 0; padding: 0; font-size: inherit; }
-ul { margin: 0 0 0.8em; padding-left: 1.2em; }
+ul, ol { margin: 0 0 0.8em; padding-left: 1.3em; }
+.md-h { font-size: 0.95rem; margin: 1.1em 0 0.4em; color: var(--text); }
 li { margin: 0.2em 0; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) {
@@ -290,3 +291,91 @@ input[type='range'] { accent-color: var(--accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .search-btn { white-space: nowrap; overflow: hidden; min-width: 0; }
 .search-btn .search-text { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Layout fixes ---------- */
+/* Grid/flex children default to min-width:auto, letting long content (code, keys, tables) force overflow. */
+.grid > *, .row > *, .stack > * { min-width: 0; }
+.viz-stage, .lane, .card { min-width: 0; }
+.viz-stage table, .card table { display: block; overflow-x: auto; }
+.viz-stage table tbody, .card table tbody { display: table; width: 100%; }
+@media (max-width: 760px) {
+  /* Inline column templates must still collapse on small screens. */
+  .grid.cols-2, .grid.cols-3 { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* Collapsible desktop sidebar */
+.collapse-btn { border: 0; background: none; cursor: pointer; font: inherit; width: 100%; text-align: left; }
+.shell { transition: grid-template-columns 0.2s; }
+.shell.collapsed { grid-template-columns: 68px 1fr; }
+.shell.collapsed .sidebar { padding: 16px 10px; align-items: center; }
+.shell.collapsed .sidebar .label,
+.shell.collapsed .sidebar .mini,
+.shell.collapsed .sidebar .nav-section,
+.shell.collapsed .sidebar .brand-text,
+.shell.collapsed .sidebar .badge { display: none; }
+.shell.collapsed .nav-link { justify-content: center; padding: 8px; width: 46px; }
+.shell.collapsed .brand { padding: 4px 0 12px; }
+
+/* Mobile bottom tab bar */
+.bottom-nav { display: none; }
+@media (max-width: 900px) {
+  .shell.collapsed { grid-template-columns: 1fr; }
+  .shell.collapsed .sidebar .label, .shell.collapsed .sidebar .mini, .shell.collapsed .sidebar .nav-section, .shell.collapsed .sidebar .brand-text, .shell.collapsed .sidebar .badge { display: revert; }
+  .shell.collapsed .nav-link { justify-content: flex-start; width: auto; padding: 7px 10px; }
+  .shell.collapsed .sidebar { align-items: stretch; padding: 16px 12px; }
+  .bottom-nav {
+    display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: color-mix(in srgb, var(--bg-elev) 92%, transparent); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border); padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav a, .bottom-nav button {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; font: inherit; font-size: 0.68rem; font-weight: 600;
+    color: var(--text-3); background: none; border: 0; border-radius: 10px; position: relative; cursor: pointer;
+  }
+  .bottom-nav a:hover { text-decoration: none; }
+  .bottom-nav a.active { color: var(--accent); }
+  .bottom-nav .badge { position: absolute; top: 2px; right: calc(50% - 24px); font-size: 0.6rem; line-height: 15px; padding: 0 5px; }
+  .content { padding-bottom: 96px; }
+  .sync-label { display: none; }
+  .collapse-btn { display: none; }
+  .toast { bottom: 84px; }
+}
+body.nav-locked { overflow: hidden; }
+
+/* ---------- Code blocks ---------- */
+.codeblock { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 0 0 1em; background: var(--code-bg); }
+.codeblock-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 2px 12px; border-bottom: 1px solid var(--border); font-size: 0.75rem; color: var(--text-3); font-weight: 600; min-height: 32px; }
+.codeblock pre { margin: 0; border: 0; border-radius: 0; }
+.tk-k { color: #c026d3; }
+.tk-s { color: #15803d; }
+.tk-n { color: #c2410c; }
+.tk-c { color: var(--text-3); font-style: italic; }
+.tk-t { color: #0369a1; }
+.tk-f { color: #4f46e5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .tk-k { color: #f0abfc; }
+  :root:not([data-theme='light']) .tk-s { color: #86efac; }
+  :root:not([data-theme='light']) .tk-n { color: #fdba74; }
+  :root:not([data-theme='light']) .tk-t { color: #7dd3fc; }
+  :root:not([data-theme='light']) .tk-f { color: #a5b4fc; }
+}
+:root[data-theme='dark'] .tk-k { color: #f0abfc; }
+:root[data-theme='dark'] .tk-s { color: #86efac; }
+:root[data-theme='dark'] .tk-n { color: #fdba74; }
+:root[data-theme='dark'] .tk-t { color: #7dd3fc; }
+:root[data-theme='dark'] .tk-f { color: #a5b4fc; }
+
+/* ---------- Deep lesson sections ---------- */
+.deep-section { margin-top: 18px; }
+.deep-section > h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+.case { border-left: 3px solid var(--violet); background: var(--violet-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; }
+.case h5 { margin: 0 0 6px; font-size: 0.95rem; color: var(--text); }
+.pitfall { display: flex; gap: 8px; padding: 6px 0; }
+.pitfall::before { content: '⚠'; color: var(--warn); }
+.exercise { border: 1px dashed var(--accent); border-radius: 10px; padding: 12px 16px; }
+.reveal { margin-top: 8px; }
+.reveal summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 0.88rem; padding: 4px 0; }
+.ex-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.topic-body { padding: 4px 20px 18px 52px; }
+@media (max-width: 640px) { .topic-body { padding: 4px 14px 16px 14px; } }
+.lane { overflow-x: auto; }

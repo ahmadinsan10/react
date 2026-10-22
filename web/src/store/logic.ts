@@ -15,6 +15,8 @@ export type Progress = {
   notes: Record<string, string>
   activity: Record<string, number>
   startedAt: number
+  /** Last local modification (ms). Used by sync to show freshness. */
+  updatedAt?: number
 }
 
 export const emptyProgress = (now = Date.now()): Progress => ({
@@ -57,6 +59,7 @@ export function parseProgress(raw: unknown): Progress | null {
     cards,
     notes: strings(raw.notes),
     activity: numbers(raw.activity),
+    updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : undefined,
   }
 }
 

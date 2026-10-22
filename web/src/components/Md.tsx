@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
+import { CodeBlock } from './CodeBlock'
 
 /** Inline: `code`, **bold** and *italic*. Builds elements, never injects HTML. */
 function inline(text: string, keyBase: string): ReactNode[] {
@@ -25,7 +26,7 @@ function inline(text: string, keyBase: string): ReactNode[] {
   return out
 }
 
-/** Tiny block renderer: paragraphs, "- " lists, ``` fences. */
+/** Tiny block renderer: paragraphs, "### " headings, "- " and "1. " lists, ``` fences. */
 export function Md({ text }: { text: string }) {
   const blocks: ReactNode[] = []
   const lines = text.split('\n')
@@ -34,14 +35,26 @@ export function Md({ text }: { text: string }) {
   while (i < lines.length) {
     const line = lines[i]!
     if (line.startsWith('```')) {
+      const lang = line.slice(3).trim()
       const code: string[] = []
       i++
       while (i < lines.length && !lines[i]!.startsWith('```')) code.push(lines[i++]!)
       i++
+      blocks.push(<CodeBlock key={k++} code={code.join('\n')} title={lang || undefined} />)
+    } else if (line.startsWith('### ')) {
+      const key = k++
+      blocks.push(<h4 key={key} className="md-h">{inline(line.slice(4), String(key))}</h4>)
+      i++
+    } else if (/^\d+\. /.test(line)) {
+      const items: string[] = []
+      while (i < lines.length && /^\d+\. /.test(lines[i]!)) items.push(lines[i++]!.replace(/^\d+\. /, ''))
+      const key = k++
       blocks.push(
-        <pre key={k++}>
-          <code>{code.join('\n')}</code>
-        </pre>,
+        <ol key={key}>
+          {items.map((it, j) => (
+            <li key={j}>{inline(it, `${key}-${j}`)}</li>
+          ))}
+        </ol>,
       )
     } else if (line.startsWith('- ')) {
       const items: string[] = []
@@ -58,7 +71,7 @@ export function Md({ text }: { text: string }) {
       i++
     } else {
       const para: string[] = []
-      while (i < lines.length && lines[i]!.trim() !== '' && !lines[i]!.startsWith('- ') && !lines[i]!.startsWith('```')) {
+      while (i < lines.length && lines[i]!.trim() !== '' && !/^(- |\d+\. |### |```)/.test(lines[i]!)) {
         para.push(lines[i++]!)
       }
       const key = k++

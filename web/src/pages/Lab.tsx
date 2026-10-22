@@ -1,6 +1,7 @@
 import { Component, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { LEVELS } from '../data/levels'
+import { VizGuidePanel } from '../components/DeepTopic'
 import { Icon } from '../components/ui'
 import { toggleFlag } from '../store/logic'
 import { getProgress, setProgress, useProgress } from '../store/progress'
@@ -108,6 +109,7 @@ export function VizPage() {
           </Suspense>
         </VizBoundary>
       </div>
+      <VizGuidePanel key={v.id} id={v.id} />
       <div className="row" style={{ marginTop: 24, justifyContent: 'space-between' }}>
         {prev ? (
           <Link className="btn" to={`/lab/${prev.id}`}>

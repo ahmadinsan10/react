@@ -14,7 +14,13 @@ describe('Md', () => {
   it('renders lists and fenced code without parsing markup inside code', () => {
     const out = html('- one\n- **two**\n\n```js\nconst a = 2 * 3 * 4\n```')
     expect(out).toContain('<ul><li>one</li><li><strong>two</strong></li></ul>')
-    expect(out).toContain('<pre><code>const a = 2 * 3 * 4</code></pre>')
+    expect(out).toContain('class="codeblock"')
+    expect(out).toContain('<span class="tk-k">const</span> a = <span class="tk-n">2</span> * <span class="tk-n">3</span> * <span class="tk-n">4</span>')  })
+
+  it('renders headings and numbered lists, and ends paragraphs at block starts', () => {
+    expect(html('Intro line\n### Why\n1. first\n2. **second**')).toBe(
+      '<p>Intro line</p><h4 class="md-h">Why</h4><ol><li>first</li><li><strong>second</strong></li></ol>',
+    )
   })
 
   it('escapes HTML instead of injecting it', () => {

@@ -93,7 +93,7 @@ export function Toggle({ checked, onChange, children }: { checked: boolean; onCh
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="row" style={{ gap: 0, border: '1px solid var(--border)', borderRadius: 9, overflow: 'hidden', flexWrap: 'nowrap' }}>
+    <div role="radiogroup" aria-label={label} className="row" style={{ gap: 0, border: '1px solid var(--border)', borderRadius: 9, overflowX: 'auto', flexWrap: 'nowrap', maxWidth: '100%' }}>
       {options.map(o => (
         <button
           key={o.value}

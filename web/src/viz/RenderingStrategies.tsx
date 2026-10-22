@@ -115,7 +115,16 @@ export default function RenderingStrategies() {
           ))}
           <div style={{ position: 'relative', height: 30, marginLeft: 72 }}>
             {[['FCP', st.fcp, 'var(--accent)'], ['Interactive', st.tti, 'var(--ok)']].map(([l, ms, c]) => (
-              <div key={l as string} style={{ position: 'absolute', left: pct(ms as number), top: 0, borderLeft: `2px dashed ${c}`, height: 30, paddingLeft: 4, fontSize: '0.7rem', fontWeight: 700, color: c as string, whiteSpace: 'nowrap' }}>
+              <div
+                key={l as string}
+                style={{
+                  position: 'absolute', left: pct(ms as number), top: 0, height: 30, fontSize: '0.7rem', fontWeight: 700, color: c as string, whiteSpace: 'nowrap',
+                  // Late markers put their label on the left so it never overflows the timeline.
+                  ...((ms as number) / MAX > 0.55
+                    ? { transform: 'translateX(-100%)', borderRight: `2px dashed ${c}`, paddingRight: 4 }
+                    : { borderLeft: `2px dashed ${c}`, paddingLeft: 4 }),
+                }}
+              >
                 {l} {ms}ms
               </div>
             ))}

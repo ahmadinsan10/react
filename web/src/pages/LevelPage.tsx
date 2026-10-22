@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { LEVELS, levelBySlug } from '../data/levels'
 import { questionsForLevel } from '../data/quizzes'
-import { Md } from '../components/Md'
+import { DeepTopic } from '../components/DeepTopic'
 import { QuizRunner } from '../components/QuizRunner'
 import { Bar, Check, Icon, Ring, toast } from '../components/ui'
 import { isComplete, isMastered, levelStats, toggleFlag, topicKey } from '../store/logic'
@@ -180,9 +180,10 @@ function Learn({ levelId }: { levelId: number }) {
             </button>
             {isOpen && (
               <div className="topic-body">
-                <Md text={t.body} />
+                <DeepTopic level={levelId} topicId={t.id} summary={t.body} />
                 <button
-                  className={`btn sm${done ? '' : ' primary'}`}
+                  className={`btn${done ? '' : ' primary'}`}
+                  style={{ marginTop: 20 }}
                   onClick={() => {
                     setProgress(x => toggleFlag(x, 'topics', key))
                     if (!done) {

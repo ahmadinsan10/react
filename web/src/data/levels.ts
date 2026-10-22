@@ -208,7 +208,7 @@ type State =
     tagline: 'Real multi-page apps with real APIs.',
     phase: 'Building',
     weeks: 4,
-    vizIds: ['race-condition', 'ui-states'],
+    vizIds: ['query-cache', 'race-condition', 'ui-states'],
     checkpoint: 'Refreshing any page keeps its state (from the URL), the back button works, and you can explain every request waterfall.',
     topics: [
       t('routing', 'Routing', `Learn **React Router** (or TanStack Router for type-safety): nested routes and layouts, params, **search params as state**, loaders/actions, 404s, protected routes and lazy routes. If a piece of UI state should survive a refresh or be shareable, put it in the URL.`),
@@ -272,7 +272,7 @@ type State =
     tagline: 'Design APIs other developers love — accessible by default.',
     phase: 'Building',
     weeks: 4,
-    vizIds: [],
+    vizIds: ['focus-trap'],
     checkpoint: 'Every component in your design system works keyboard-only and passes axe checks.',
     topics: [
       t('styling', 'Styling approaches', `CSS Modules (scoped, zero runtime), **Tailwind** (utility-first, very popular), zero-runtime CSS-in-JS (vanilla-extract). Runtime CSS-in-JS fell out of favour because it doesn't fit Server Components and costs render time.`),
@@ -442,7 +442,7 @@ type State =
     tagline: 'Own a codebase other people can work in.',
     phase: 'Expert',
     weeks: 4,
-    vizIds: [],
+    vizIds: ['xss'],
     checkpoint: 'A new developer can clone your repo, run one command and have everything working; every PR is automatically checked.',
     topics: [
       t('quality', 'Code quality', `ESLint flat config shared across the monorepo (react-hooks with compiler rules, jsx-a11y), Prettier or Biome, strict TypeScript, Husky + lint-staged.`),

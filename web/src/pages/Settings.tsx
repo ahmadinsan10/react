@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { SyncPanel } from '../components/SyncPanel'
 import { toast } from '../components/ui'
 import { emptyProgress, parseProgress } from '../store/logic'
 import { replaceProgress, useProgress } from '../store/progress'
@@ -40,11 +41,13 @@ export function Settings() {
         <div className="eyebrow">Settings</div>
         <h1>Settings & backup</h1>
         <p>
-          Your progress is stored only in this browser (localStorage). Nothing is sent to a server. To learn on another device, or to keep a safe copy, export a backup and import it
-          there.
+          Progress is saved in this browser and, if you turn on sync, to the sync server so all your devices stay in step. You can also export a JSON backup at any time.
         </p>
       </div>
       <div className="grid cols-2" style={{ alignItems: 'start' }}>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <SyncPanel />
+        </div>
         <div className="card">
           <h3>Backup</h3>
           <p className="subtle">{items} tracked items · {Object.keys(p.notes).length} notes · started {new Date(p.startedAt).toLocaleDateString()}</p>
