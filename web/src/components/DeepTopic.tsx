@@ -4,9 +4,9 @@ import { levelDetails, vizGuides } from '../data/details'
 import { CodeBlock } from './CodeBlock'
 import { Md } from './Md'
 
-function Section({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
+function Section({ id, icon, title, children }: { id: string; icon: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="deep-section">
+    <section className="deep-section" id={id}>
       <h4>
         <span aria-hidden="true">{icon}</span> {title}
       </h4>
@@ -38,23 +38,27 @@ function Examples({ examples }: { examples: TopicDetail['examples'] }) {
   )
 }
 
-function Body({ detail }: { detail: TopicDetail }) {
+export function LessonBody({ detail }: { detail: TopicDetail }) {
   return (
     <>
-      <Md text={detail.explanation} />
+      <Section id="explanation" icon="📘" title="Explanation">
+        <div className="lesson-prose">
+          <Md text={detail.explanation} />
+        </div>
+      </Section>
       {detail.examples.length > 0 && (
-        <Section icon="💻" title="Examples">
+        <Section id="examples" icon="💻" title="Examples">
           <Examples examples={detail.examples} />
         </Section>
       )}
-      <Section icon="🏢" title="Real-world case">
+      <Section id="real-case" icon="🏢" title="Real-world case">
         <div className="case">
           <h5>{detail.realCase.title}</h5>
           <Md text={detail.realCase.story} />
         </div>
       </Section>
       {detail.pitfalls.length > 0 && (
-        <Section icon="⚠️" title="Pitfalls">
+        <Section id="pitfalls" icon="⚠️" title="Pitfalls">
           {detail.pitfalls.map((p, i) => (
             <div key={i} className="pitfall">
               <div>
@@ -64,7 +68,7 @@ function Body({ detail }: { detail: TopicDetail }) {
           ))}
         </Section>
       )}
-      <Section icon="🛠️" title="Exercise">
+      <Section id="exercise" icon="🛠️" title="Exercise">
         <div className="exercise">
           <Md text={detail.exercise.task} />
           <details className="reveal">
@@ -78,7 +82,7 @@ function Body({ detail }: { detail: TopicDetail }) {
         </div>
       </Section>
       {detail.interview.length > 0 && (
-        <Section icon="🎤" title="Interview questions">
+        <Section id="interview" icon="🎤" title="Interview questions">
           <ol>
             {detail.interview.map((q, i) => (
               <li key={i}>
@@ -96,7 +100,7 @@ function Body({ detail }: { detail: TopicDetail }) {
 function Loaded({ level, topicId, fallback }: { level: number; topicId: string; fallback: string }) {
   const details = use(levelDetails(level))
   const d = details[topicId]
-  return d ? <Body detail={d} /> : <Md text={fallback} />
+  return d ? <LessonBody detail={d} /> : <Md text={fallback} />
 }
 
 /** Full lesson: summary first (instant), then the deep content once the level's chunk loads. */

@@ -16,7 +16,7 @@ const ITEMS: Item[] = [
   { kind: 'Page', title: 'Settings', hint: 'Theme, export, import, reset', to: '/settings', haystack: 'settings export import backup reset theme' },
   ...LEVELS.map(l => ({ kind: `Level ${l.id}`, title: l.title, hint: l.tagline, to: `/level/${l.slug}`, haystack: `${l.title} ${l.tagline}`.toLowerCase() })),
   ...LEVELS.flatMap(l =>
-    l.topics.map(t => ({ kind: 'Lesson', title: t.title, hint: `Level ${l.id} · ${l.title}`, to: `/level/${l.slug}?tab=learn#${t.id}`, haystack: `${t.title} ${t.body}`.toLowerCase() })),
+    l.topics.map(t => ({ kind: 'Lesson', title: t.title, hint: `Level ${l.id} · ${l.title}`, to: `/level/${l.slug}/learn/${t.id}`, haystack: `${t.title} ${t.body}`.toLowerCase() })),
   ),
   ...VIZ.map(v => ({ kind: 'Viz', title: v.title, hint: v.summary, to: `/lab/${v.id}`, haystack: `${v.title} ${v.summary}`.toLowerCase() })),
   ...QUESTIONS.map(q => {

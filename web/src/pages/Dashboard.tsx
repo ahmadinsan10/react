@@ -11,7 +11,7 @@ import type { Level } from '../data/types'
 /** The single most useful next action inside a level. */
 function nextAction(p: Progress, l: Level): { text: string; to: string } {
   const topic = l.topics.find(t => !t.stretch && !p.topics[topicKey(l.id, t.id)])
-  if (topic) return { text: `Read: ${topic.title}`, to: `/level/${l.slug}?tab=learn#${topic.id}` }
+  if (topic) return { text: `Read: ${topic.title}`, to: `/level/${l.slug}/learn/${topic.id}` }
   const viz = l.vizIds.find(v => !p.vizSeen[v])
   if (viz) return { text: `Explore: ${VIZ.find(x => x.id === viz)?.title ?? viz}`, to: `/lab/${viz}` }
   const unmastered = QUESTIONS.filter(q => q.level === l.id && !isMastered(p.cards[q.id]))

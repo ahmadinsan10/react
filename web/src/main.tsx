@@ -5,6 +5,7 @@ import { Layout } from './components/Layout'
 import { Dashboard } from './pages/Dashboard'
 import { Roadmap } from './pages/Roadmap'
 import { LevelPage } from './pages/LevelPage'
+import { LessonPage } from './pages/LessonPage'
 import { Lab, VizPage } from './pages/Lab'
 import { Review, Exam } from './pages/Review'
 import { Checklist } from './pages/Checklist'
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<Dashboard />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="level/:slug" element={<LevelPage />} />
+          <Route path="level/:slug/learn/:topicId" element={<LessonPage />} />
           <Route path="lab" element={<Lab />} />
           <Route path="lab/:id" element={<VizPage />} />
           <Route path="review" element={<Review />} />

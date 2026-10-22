@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, use, useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { LEVELS, levelBySlug } from '../data/levels'
 import { questionsForLevel } from '../data/quizzes'
-import { DeepTopic } from '../components/DeepTopic'
 import { QuizRunner } from '../components/QuizRunner'
 import { Bar, Check, Icon, Ring, toast } from '../components/ui'
-import { isComplete, isMastered, levelStats, toggleFlag, topicKey } from '../store/logic'
+import { isComplete, isMastered, levelStats, toggleFlag, topicKey, type Progress } from '../store/logic'
 import { setProgress, useProgress } from '../store/progress'
 import { VIZ } from '../viz/registry'
 import { NotFound } from './NotFound'
+import { ChunkBoundary, readingMinutes } from './LessonPage'
+import { levelDetails } from '../data/details'
 
 const TABS = ['learn', 'visualize', 'quiz', 'project', 'checkpoint'] as const
 type Tab = (typeof TABS)[number]
@@ -140,70 +141,57 @@ export function LevelPage() {
   )
 }
 
+function Minutes({ levelId, topicId }: { levelId: number; topicId: string }) {
+  const mins = readingMinutes(use(levelDetails(levelId))[topicId])
+  return mins ? <span className="pill">📖 {mins} min</span> : null
+}
+
 function Learn({ levelId }: { levelId: number }) {
   const level = LEVELS[levelId]!
   const p = useProgress()
-  const [open, setOpen] = useState<Set<string>>(() => {
-    const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : ''
-    const first = level.topics.find(t => !p.topics[topicKey(levelId, t.id)])
-    return new Set([hash || first?.id || ''].filter(Boolean))
-  })
-  const toggleOpen = (id: string) =>
-    setOpen(o => {
-      const n = new Set(o)
-      if (n.has(id)) n.delete(id)
-      else n.add(id)
-      return n
-    })
+  const nextUp = level.topics.find(t => !t.stretch && !p.topics[topicKey(levelId, t.id)])
 
   return (
     <div>
-      <div className="row" style={{ marginBottom: 12 }}>
-        <span className="subtle">Read each lesson, then mark it done. Stretch topics are optional and don't count toward progress.</span>
+      <div className="row" style={{ marginBottom: 14 }}>
+        <span className="subtle">
+          Each lesson has a full explanation, code examples, a real-world case, pitfalls, an exercise with solution and interview questions. Stretch lessons are optional.
+        </span>
         <span className="spacer" />
-        <button className="btn sm ghost" onClick={() => setOpen(new Set(level.topics.map(t => t.id)))}>Expand all</button>
-        <button className="btn sm ghost" onClick={() => setOpen(new Set())}>Collapse all</button>
+        {nextUp && (
+          <Link className="btn primary" to={`/level/${level.slug}/learn/${nextUp.id}`}>
+            {s0(level, p) ? 'Start' : 'Continue'}: {nextUp.title} →
+          </Link>
+        )}
       </div>
-      {level.topics.map(t => {
-        const key = topicKey(levelId, t.id)
-        const done = !!p.topics[key]
-        const isOpen = open.has(t.id)
-        return (
-          <section key={t.id} id={t.id} className="topic" style={{ scrollMarginTop: 80 }}>
-            <button className="topic-head" onClick={() => toggleOpen(t.id)} aria-expanded={isOpen}>
-              <span className={`done-dot${done ? ' on' : ''}`}>{done ? '✓' : ''}</span>
-              <h3>{t.title}</h3>
-              {t.stretch && <span className="pill warn">stretch</span>}
-              <span className={`chev${isOpen ? ' open' : ''}`}>
-                <Icon name="chevron" />
-              </span>
-            </button>
-            {isOpen && (
-              <div className="topic-body">
-                <DeepTopic level={levelId} topicId={t.id} summary={t.body} />
-                <button
-                  className={`btn${done ? '' : ' primary'}`}
-                  style={{ marginTop: 20 }}
-                  onClick={() => {
-                    setProgress(x => toggleFlag(x, 'topics', key))
-                    if (!done) {
-                      const nextTopic = level.topics[level.topics.indexOf(t) + 1]
-                      setOpen(o => {
-                        const n = new Set(o)
-                        n.delete(t.id)
-                        if (nextTopic) n.add(nextTopic.id)
-                        return n
-                      })
-                    }
-                  }}
-                >
-                  <Icon name="check" size={14} /> {done ? 'Mark as not done' : 'Mark as understood'}
-                </button>
-              </div>
-            )}
-          </section>
-        )
-      })}
+      <ol className="lesson-list">
+        {level.topics.map((t, i) => {
+          const done = !!p.topics[topicKey(levelId, t.id)]
+          return (
+            <li key={t.id} id={t.id}>
+              <Link to={`/level/${level.slug}/learn/${t.id}`} className={`lesson-card${done ? ' done' : ''}${nextUp?.id === t.id ? ' next' : ''}`}>
+                <span className={`lesson-num${done ? ' on' : ''}`}>{done ? '✓' : i + 1}</span>
+                <span className="lesson-card-body">
+                  <span className="row" style={{ gap: 6 }}>
+                    <strong className="lesson-card-title">{t.title}</strong>
+                    {t.stretch && <span className="pill warn">stretch</span>}
+                    {nextUp?.id === t.id && <span className="pill accent">up next</span>}
+                    <ChunkBoundary>
+                      <Suspense fallback={null}>
+                        <Minutes levelId={levelId} topicId={t.id} />
+                      </Suspense>
+                    </ChunkBoundary>
+                  </span>
+                  <span className="lesson-card-summary">{t.body.split('\n')[0]!.replace(/[`*]/g, '')}</span>
+                </span>
+                <span className="lesson-card-cta">
+                  {done ? 'Review' : 'Read lesson'} <Icon name="chevron" size={16} />
+                </span>
+              </Link>
+            </li>
+          )
+        })}
+      </ol>
       <div className="card flat" style={{ marginTop: 16 }}>
         <h3>Resources</h3>
         <ul>
@@ -219,6 +207,8 @@ function Learn({ levelId }: { levelId: number }) {
     </div>
   )
 }
+
+const s0 = (level: (typeof LEVELS)[number], p: Progress) => !level.topics.some(t => p.topics[topicKey(level.id, t.id)])
 
 function CheckpointTab({ levelId }: { levelId: number }) {
   const level = LEVELS[levelId]!
