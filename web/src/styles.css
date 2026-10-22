@@ -431,3 +431,17 @@ body.nav-locked { overflow: hidden; }
   .scrim { z-index: 45; }
 }
 .shell.collapsed .brand-row { justify-content: center; }
+
+/* ---------- Minimal scrollbars ---------- */
+:root { --scroll-thumb: color-mix(in srgb, var(--text-3) 45%, transparent); --scroll-thumb-hover: color-mix(in srgb, var(--text-3) 75%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 6px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+*::-webkit-scrollbar-corner { background: transparent; }
+/* Sidebar & lesson outline: hide the thumb until the pointer is over them. */
+.sidebar, .lesson-aside { scrollbar-color: transparent transparent; }
+.sidebar:hover, .lesson-aside:hover { scrollbar-color: var(--scroll-thumb) transparent; }
+.sidebar::-webkit-scrollbar-thumb, .lesson-aside::-webkit-scrollbar-thumb { background: transparent; }
+.sidebar:hover::-webkit-scrollbar-thumb, .lesson-aside:hover::-webkit-scrollbar-thumb { background: var(--scroll-thumb); }
