@@ -2,4 +2,7 @@
 
 Learning roadmap to become a React expert.
 
-See [GUIDE.md](GUIDE.md) for the step-by-step guide. Each project lives in its own numbered folder.
+- [GUIDE.md](GUIDE.md): the step-by-step guide
+- [web/](web/): interactive learning app (lessons, visualizations, quizzes, progress tracker), deployable to Vercel
+
+Each practice project lives in its own numbered folder.

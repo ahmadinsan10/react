@@ -1,0 +1,149 @@
+import { useEffect, useState } from 'react'
+import { Note, Segmented } from './common'
+
+type Seg = { label: string; from: number; to: number; color: string; row: 'server' | 'network' | 'browser' }
+type Strategy = { id: string; name: string; segs: Seg[]; fcp: number; tti: number; note: string }
+
+const C = { server: 'var(--violet)', net: 'var(--text-3)', js: 'var(--warn)', render: 'var(--accent)', data: 'var(--bad)', hydrate: 'var(--ok)' }
+
+const STRATEGIES: Strategy[] = [
+  {
+    id: 'csr', name: 'CSR', fcp: 2100, tti: 2100,
+    segs: [
+      { label: 'empty HTML', from: 0, to: 150, color: C.net, row: 'network' },
+      { label: 'download JS', from: 150, to: 900, color: C.js, row: 'network' },
+      { label: 'run JS', from: 900, to: 1200, color: C.js, row: 'browser' },
+      { label: 'fetch data', from: 1200, to: 1900, color: C.data, row: 'network' },
+      { label: 'render', from: 1900, to: 2100, color: C.render, row: 'browser' },
+    ],
+    note: '**Client-Side Rendering**: the browser gets an empty shell, downloads JS, then fetches data. Nothing useful appears until everything is done. Fine for dashboards behind login; poor for SEO and slow devices.',
+  },
+  {
+    id: 'ssr', name: 'SSR', fcp: 1000, tti: 1900,
+    segs: [
+      { label: 'fetch data', from: 0, to: 600, color: C.data, row: 'server' },
+      { label: 'render HTML', from: 600, to: 800, color: C.server, row: 'server' },
+      { label: 'full HTML', from: 800, to: 1000, color: C.net, row: 'network' },
+      { label: 'download JS', from: 1000, to: 1600, color: C.js, row: 'network' },
+      { label: 'hydrate', from: 1600, to: 1900, color: C.hydrate, row: 'browser' },
+    ],
+    note: '**Server-Side Rendering**: HTML is generated per request, so content shows sooner, but the server waits for ALL data before sending anything, and the page is not interactive until hydration finishes.',
+  },
+  {
+    id: 'ssg', name: 'SSG', fcp: 250, tti: 1050,
+    segs: [
+      { label: 'cached HTML (CDN)', from: 0, to: 250, color: C.net, row: 'network' },
+      { label: 'download JS', from: 250, to: 750, color: C.js, row: 'network' },
+      { label: 'hydrate', from: 750, to: 1050, color: C.hydrate, row: 'browser' },
+    ],
+    note: '**Static Site Generation**: HTML is built once at build time and served from a CDN. Fastest possible first paint, but content is only as fresh as the last build (or revalidation).',
+  },
+  {
+    id: 'stream', name: 'Streaming', fcp: 350, tti: 1500,
+    segs: [
+      { label: 'shell', from: 0, to: 200, color: C.server, row: 'server' },
+      { label: 'slow data', from: 200, to: 1100, color: C.data, row: 'server' },
+      { label: 'shell HTML', from: 200, to: 350, color: C.net, row: 'network' },
+      { label: 'download JS', from: 350, to: 900, color: C.js, row: 'network' },
+      { label: 'hydrate shell', from: 900, to: 1100, color: C.hydrate, row: 'browser' },
+      { label: 'stream chunk', from: 1100, to: 1250, color: C.net, row: 'network' },
+      { label: 'hydrate rest', from: 1250, to: 1500, color: C.hydrate, row: 'browser' },
+    ],
+    note: '**Streaming SSR with Suspense**: the server sends the shell immediately and streams each Suspense boundary as its data resolves. Selective hydration makes parts interactive independently.',
+  },
+  {
+    id: 'ppr', name: 'PPR', fcp: 250, tti: 1300,
+    segs: [
+      { label: 'static shell (CDN)', from: 0, to: 250, color: C.net, row: 'network' },
+      { label: 'dynamic data', from: 0, to: 900, color: C.data, row: 'server' },
+      { label: 'download JS', from: 250, to: 750, color: C.js, row: 'network' },
+      { label: 'hydrate shell', from: 750, to: 950, color: C.hydrate, row: 'browser' },
+      { label: 'stream holes', from: 900, to: 1050, color: C.net, row: 'network' },
+      { label: 'hydrate holes', from: 1050, to: 1300, color: C.hydrate, row: 'browser' },
+    ],
+    note: "**Partial Prerendering** (Next.js Cache Components): the static shell is prerendered and served instantly like SSG, while dynamic 'holes' wrapped in Suspense stream in like SSR. Best of both.",
+  },
+]
+
+const MAX = 2300
+const ROWS = ['server', 'network', 'browser'] as const
+
+export default function RenderingStrategies() {
+  const [id, setId] = useState('csr')
+  const [t, setT] = useState(0)
+  const st = STRATEGIES.find(s => s.id === id)!
+
+  useEffect(() => {
+    setT(0)
+    const start = performance.now()
+    let raf = requestAnimationFrame(function tick(now) {
+      const elapsed = (now - start) * 0.9
+      setT(Math.min(elapsed, MAX))
+      if (elapsed < MAX) raf = requestAnimationFrame(tick)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [id])
+
+  const pct = (ms: number) => `${(ms / MAX) * 100}%`
+  const status = t < st.fcp ? 'blank' : t < st.tti ? 'visible' : 'interactive'
+
+  return (
+    <div>
+      <Segmented label="Strategy" value={id} onChange={setId} options={STRATEGIES.map(s => ({ value: s.id, label: s.name }))} />
+      <div className="grid cols-2" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', marginTop: 14 }}>
+        <div className="viz-stage">
+          {ROWS.map(r => (
+            <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ width: 64, fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-3)' }}>{r}</span>
+              <div style={{ position: 'relative', flex: 1, height: 26 }}>
+                {st.segs
+                  .filter(s => s.row === r)
+                  .map(s => {
+                    const shown = Math.max(0, Math.min(t, s.to) - s.from)
+                    return (
+                      <div
+                        key={s.label}
+                        title={`${s.label}: ${s.from}–${s.to}ms`}
+                        style={{ position: 'absolute', left: pct(s.from), width: pct(shown), height: '100%', background: s.color, borderRadius: 5, overflow: 'hidden', fontSize: '0.65rem', color: '#fff', fontWeight: 700, padding: '0 4px', lineHeight: '26px', whiteSpace: 'nowrap' }}
+                      >
+                        {s.label}
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          ))}
+          <div style={{ position: 'relative', height: 30, marginLeft: 72 }}>
+            {[['FCP', st.fcp, 'var(--accent)'], ['Interactive', st.tti, 'var(--ok)']].map(([l, ms, c]) => (
+              <div key={l as string} style={{ position: 'absolute', left: pct(ms as number), top: 0, borderLeft: `2px dashed ${c}`, height: 30, paddingLeft: 4, fontSize: '0.7rem', fontWeight: 700, color: c as string, whiteSpace: 'nowrap' }}>
+                {l} {ms}ms
+              </div>
+            ))}
+          </div>
+          <div className="subtle" style={{ textAlign: 'right' }}>t = {Math.round(t)} ms (illustrative)</div>
+        </div>
+        <div className="viz-stage" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="subtle" style={{ marginBottom: 6 }}>What the user sees</div>
+          <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elev)', padding: 10, minHeight: 150, position: 'relative' }}>
+            {status === 'blank' ? (
+              <div className="subtle" style={{ display: 'grid', placeItems: 'center', height: '100%' }}>⬜ blank screen</div>
+            ) : (
+              <>
+                <div style={{ height: 10, width: '60%', background: 'var(--text-3)', borderRadius: 4, marginBottom: 8 }} />
+                <div style={{ height: 8, width: '90%', background: 'var(--border)', borderRadius: 4, marginBottom: 6 }} />
+                <div style={{ height: 8, width: '80%', background: 'var(--border)', borderRadius: 4, marginBottom: 12 }} />
+                <button className={`btn sm${status === 'interactive' ? ' primary' : ''}`} style={{ pointerEvents: 'none' }}>
+                  {status === 'interactive' ? 'Buy (works)' : 'Buy (not yet)'}
+                </button>
+              </>
+            )}
+            <span className={`pill ${status === 'interactive' ? 'ok' : status === 'visible' ? 'warn' : ''}`} style={{ position: 'absolute', bottom: 8, right: 8 }}>
+              {status}
+            </span>
+          </div>
+        </div>
+      </div>
+      <Note>{st.note}</Note>
+    </div>
+  )
+}
