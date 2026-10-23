@@ -1,6 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Md } from '../components/Md'
 import { Icon } from '../components/ui'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: { play: 'Play', pause: 'Pause', replay: 'Replay', reset: 'Reset', prev: 'Previous step', next: 'Next step', step: 'Step', speed: 'Speed' },
+  id: { play: 'Putar', pause: 'Jeda', replay: 'Putar ulang', reset: 'Reset', prev: 'Langkah sebelumnya', next: 'Langkah berikutnya', step: 'Langkah', speed: 'Kecepatan' },
+} as const
 
 export function useStepper(total: number, baseMs = 1100) {
   const [i, setI] = useState(0)
@@ -38,19 +44,20 @@ export function useStepper(total: number, baseMs = 1100) {
 }
 
 export function StepControls({ s, total, extra }: { s: ReturnType<typeof useStepper>; total: number; extra?: ReactNode }) {
+  const t = T[useLang()]
   return (
     <div className="viz-controls">
       <button className="btn primary sm" onClick={s.toggle}>
-        <Icon name={s.playing ? 'pause' : 'play'} size={14} /> {s.playing ? 'Pause' : s.atEnd ? 'Replay' : 'Play'}
+        <Icon name={s.playing ? 'pause' : 'play'} size={14} /> {s.playing ? t.pause : s.atEnd ? t.replay : t.play}
       </button>
-      <button className="btn sm" onClick={s.prev} disabled={s.i === 0} aria-label="Previous step">
+      <button className="btn sm" onClick={s.prev} disabled={s.i === 0} aria-label={t.prev}>
         ◀
       </button>
-      <button className="btn sm" onClick={s.next} disabled={s.atEnd} aria-label="Next step">
+      <button className="btn sm" onClick={s.next} disabled={s.atEnd} aria-label={t.next}>
         ▶
       </button>
       <button className="btn sm ghost" onClick={s.reset}>
-        <Icon name="reset" size={14} /> Reset
+        <Icon name="reset" size={14} /> {t.reset}
       </button>
       <input
         type="range"
@@ -58,13 +65,13 @@ export function StepControls({ s, total, extra }: { s: ReturnType<typeof useStep
         max={total - 1}
         value={s.i}
         onChange={e => s.go(Number(e.target.value))}
-        aria-label="Step"
+        aria-label={t.step}
         style={{ flex: 1, minWidth: 120 }}
       />
       <span className="subtle">
         {s.i + 1}/{total}
       </span>
-      <select value={s.speed} onChange={e => s.setSpeed(Number(e.target.value))} aria-label="Speed">
+      <select value={s.speed} onChange={e => s.setSpeed(Number(e.target.value))} aria-label={t.speed}>
         <option value={0.5}>0.5×</option>
         <option value={1}>1×</option>
         <option value={2}>2×</option>

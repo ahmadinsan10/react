@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { Note, Segmented } from './common'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    strategy: 'Fetch strategy', naive: 'Naive fetch in effect', abort: 'With cleanup (abort / ignore)', reset: 'Reset',
+    placeholder: 'Type "apple" quickly, then try "pea"…', search: 'Search fruits', showing: 'Showing results for:',
+    stale: (q: string) => `⚠ stale: input is "${q}"`, matches: '✓ matches input', none: 'No fruits match.', timeline: 'Request timeline',
+    status: { pending: 'pending', applied: 'applied', ignored: 'ignored', aborted: 'aborted' } as Record<Req['status'], string>,
+    inFlight: 'in flight', applied: 'response applied to UI', aborted: 'aborted / ignored',
+    nNaive: 'Every response is applied when it arrives. Short queries are slower here, so the response for "a" can land AFTER "apple" and overwrite it, leaving the UI showing results for text you no longer have. Look for the red **stale** badge.',
+    nAbort: 'The effect cleanup aborts the previous request whenever the query changes, so only the latest request can ever update the UI. This is exactly what libraries like TanStack Query do for you.',
+  },
+  id: {
+    strategy: 'Strategi fetch', naive: 'Fetch polos di effect', abort: 'Dengan cleanup (abort / ignore)', reset: 'Reset',
+    placeholder: 'Ketik "apple" dengan cepat, lalu coba "pea"…', search: 'Cari buah', showing: 'Menampilkan hasil untuk:',
+    stale: (q: string) => `⚠ stale: input-nya "${q}"`, matches: '✓ sesuai input', none: 'Tidak ada buah yang cocok.', timeline: 'Timeline request',
+    status: { pending: 'pending', applied: 'dipakai', ignored: 'diabaikan', aborted: 'di-abort' } as Record<Req['status'], string>,
+    inFlight: 'sedang berjalan', applied: 'response diterapkan ke UI', aborted: 'di-abort / diabaikan',
+    nNaive: 'Setiap response langsung diterapkan begitu tiba. Di sini query pendek sengaja lebih lambat, jadi response untuk "a" bisa datang SETELAH "apple" dan menimpanya, sehingga UI menampilkan hasil untuk teks yang sudah tidak ada di input. Perhatikan badge merah **stale**.',
+    nAbort: 'Cleanup effect meng-abort request sebelumnya setiap kali query berubah, jadi hanya request terakhir yang bisa meng-update UI. Persis inilah yang dikerjakan library seperti TanStack Query untukmu.',
+  },
+}
 
 type Req = { id: number; q: string; start: number; end: number; status: 'pending' | 'applied' | 'ignored' | 'aborted' }
 
@@ -18,6 +40,7 @@ function fakeSearch(q: string, signal: AbortSignal): Promise<string[]> {
 }
 
 export default function RaceCondition() {
+  const t = T[useLang()]
   const [mode, setMode] = useState<'naive' | 'abort'>('naive')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<{ q: string; items: string[] } | null>(null)
@@ -77,18 +100,18 @@ export default function RaceCondition() {
     <div>
       <div className="viz-controls">
         <Segmented
-          label="Fetch strategy"
+          label={t.strategy}
           value={mode}
           onChange={m => {
             setMode(m)
             reset()
           }}
           options={[
-            { value: 'naive', label: 'Naive fetch in effect' },
-            { value: 'abort', label: 'With cleanup (abort / ignore)' },
+            { value: 'naive', label: t.naive },
+            { value: 'abort', label: t.abort },
           ]}
         />
-        <button className="btn sm ghost" onClick={reset}>Reset</button>
+        <button className="btn sm ghost" onClick={reset}>{t.reset}</button>
       </div>
       <div className="viz-stage">
         <input
@@ -98,23 +121,23 @@ export default function RaceCondition() {
             if (reqs.length === 0) t0.current = performance.now()
             setQuery(e.target.value)
           }}
-          placeholder='Type "apple" quickly, then try "pea"…'
-          aria-label="Search fruits"
+          placeholder={t.placeholder}
+          aria-label={t.search}
           style={{ width: '100%', fontSize: '1rem' }}
         />
         <div className="row" style={{ margin: '10px 0' }}>
-          <span className="subtle">Showing results for:</span>
+          <span className="subtle">{t.showing}</span>
           <strong>{results ? `"${results.q}"` : '—'}</strong>
-          {stale && <span className="pill" style={{ background: 'var(--bad-soft)', color: 'var(--bad)' }}>⚠ stale: input is "{query}"</span>}
-          {results && !stale && <span className="pill ok">✓ matches input</span>}
+          {stale && <span className="pill" style={{ background: 'var(--bad-soft)', color: 'var(--bad)' }}>{t.stale(query)}</span>}
+          {results && !stale && <span className="pill ok">{t.matches}</span>}
         </div>
         <div className="row" style={{ minHeight: 30 }}>
           {results?.items.slice(0, 10).map(f => (
             <span key={f} className="chip o" style={{ marginBottom: 0 }}>{f}</span>
           ))}
-          {results && results.items.length === 0 && <span className="subtle">No fruits match.</span>}
+          {results && results.items.length === 0 && <span className="subtle">{t.none}</span>}
         </div>
-        <h4 style={{ margin: '14px 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>Request timeline</h4>
+        <h4 style={{ margin: '14px 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t.timeline}</h4>
         <div style={{ position: 'relative' }}>
           {reqs.slice(-10).map(r => {
             const end = r.status === 'pending' ? now : r.end
@@ -125,21 +148,21 @@ export default function RaceCondition() {
                 <div style={{ position: 'relative', flex: 1, height: 10 }}>
                   <div style={{ position: 'absolute', left: `${x(r.start)}%`, width: `${Math.max(0.5, x(end) - x(r.start))}%`, height: '100%', borderRadius: 5, background: color, opacity: r.status === 'aborted' ? 0.4 : 1 }} />
                 </div>
-                <span style={{ width: 64, color }}>{r.status}</span>
+                <span style={{ width: 64, color }}>{t.status[r.status]}</span>
               </div>
             )
           })}
         </div>
         <div className="viz-legend" style={{ marginTop: 8 }}>
-          <span style={{ ['--c' as string]: 'var(--warn)' }}>in flight</span>
-          <span style={{ ['--c' as string]: 'var(--ok)' }}>response applied to UI</span>
-          <span style={{ ['--c' as string]: 'var(--text-3)' }}>aborted / ignored</span>
+          <span style={{ ['--c' as string]: 'var(--warn)' }}>{t.inFlight}</span>
+          <span style={{ ['--c' as string]: 'var(--ok)' }}>{t.applied}</span>
+          <span style={{ ['--c' as string]: 'var(--text-3)' }}>{t.aborted}</span>
         </div>
       </div>
       <Note>
         {mode === 'naive'
-          ? 'Every response is applied when it arrives. Short queries are slower here, so the response for "a" can land AFTER "apple" and overwrite it, leaving the UI showing results for text you no longer have. Look for the red **stale** badge.'
-          : 'The effect cleanup aborts the previous request whenever the query changes, so only the latest request can ever update the UI. This is exactly what libraries like TanStack Query do for you.'}
+          ? t.nNaive
+          : t.nAbort}
       </Note>
     </div>
   )

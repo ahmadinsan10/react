@@ -1,18 +1,54 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react'
 import { Note, Toggle } from './common'
+import { getLang, useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    labels: {
+      focusIn: 'Move focus into the dialog on open',
+      trap: 'Trap Tab / Shift+Tab inside the dialog',
+      escape: 'Close on Escape',
+      restore: 'Restore focus to the trigger on close',
+      aria: 'role="dialog" + aria-modal + aria-labelledby',
+      inert: 'Make the background inert',
+    } as Record<keyof Opts, string>,
+    lost: '<body>: focus lost, keyboard user is back at the top of the page',
+    shareClicked: 'background "Share" clicked',
+    c1: 'Keyboard users land inside the dialog when it opens', c2: 'Tab cannot reach the page behind the dialog', c3: 'Background is hidden from screen readers & clicks',
+    c4: 'Escape dismisses the dialog', c5: 'Focus returns to "Delete project" afterwards', c6: 'Screen readers announce "Delete project?, dialog"',
+    correct: 'Make it correct', breakIt: 'Break it', clear: 'Clear log', home: 'Home', settings: 'Settings', project: 'Project "Website redesign" · 12 tasks',
+    share: 'Share', del: 'Delete project', help: 'Help center', title: 'Delete project?', body: 'This cannot be undone. Type the project name to confirm.',
+    projectName: 'Project name', cancel: 'Cancel', delete: 'Delete', focusLog: 'Focus log', empty: 'Click "Delete project", then press Tab a few times.',
+    inside: ' · inside dialog', outside: ' · OUTSIDE open dialog', checklist: 'Checklist',
+    allOn: 'All requirements pass: focus moves in, Tab cycles inside, Escape closes, focus returns to the trigger and the background is `inert`. The native `<dialog>` with `showModal()`, or headless libraries like Radix / React Aria, give you all of this for free.',
+    off: 'Open the dialog with the keyboard and press **Tab**: with these toggles off, focus stays behind the dialog or wanders back to the page (red lines in the log). Closing without restoration drops focus to `<body>`. Turn the toggles on one by one, or press **Make it correct**.',
+  },
+  id: {
+    labels: {
+      focusIn: 'Pindahkan focus ke dalam dialog saat dibuka',
+      trap: 'Kurung Tab / Shift+Tab di dalam dialog',
+      escape: 'Tutup dengan Escape',
+      restore: 'Kembalikan focus ke tombol pemicu saat ditutup',
+      aria: 'role="dialog" + aria-modal + aria-labelledby',
+      inert: 'Jadikan latar belakang inert',
+    } as Record<keyof Opts, string>,
+    lost: '<body>: focus hilang, pengguna keyboard terlempar kembali ke awal halaman',
+    shareClicked: '"Bagikan" di latar belakang diklik',
+    c1: 'Pengguna keyboard langsung berada di dalam dialog saat dialog terbuka', c2: 'Tab tidak bisa menjangkau halaman di belakang dialog', c3: 'Latar belakang tersembunyi dari screen reader & tidak bisa diklik',
+    c4: 'Escape menutup dialog', c5: 'Focus kembali ke "Hapus proyek" setelahnya', c6: 'Screen reader mengumumkan "Hapus proyek?, dialog"',
+    correct: 'Buat jadi benar', breakIt: 'Rusak lagi', clear: 'Bersihkan log', home: 'Beranda', settings: 'Pengaturan', project: 'Proyek "Website redesign" · 12 tugas',
+    share: 'Bagikan', del: 'Hapus proyek', help: 'Pusat bantuan', title: 'Hapus proyek?', body: 'Tindakan ini tidak bisa dibatalkan. Ketik nama proyek untuk konfirmasi.',
+    projectName: 'Nama proyek', cancel: 'Batal', delete: 'Hapus', focusLog: 'Log focus', empty: 'Klik "Hapus proyek", lalu tekan Tab beberapa kali.',
+    inside: ' · di dalam dialog', outside: ' · DI LUAR dialog yang terbuka', checklist: 'Checklist',
+    allOn: 'Semua kebutuhan terpenuhi: focus masuk ke dialog, Tab berputar di dalamnya, Escape menutup, focus kembali ke tombol pemicu, dan latar belakang `inert`. `<dialog>` native dengan `showModal()`, atau library headless seperti Radix / React Aria, sudah memberi semua ini secara gratis.',
+    off: 'Buka dialog dengan keyboard lalu tekan **Tab**: selama toggle ini mati, focus tertinggal di belakang dialog atau berkeliaran kembali ke halaman (baris merah di log). Menutup dialog tanpa pengembalian focus membuat focus jatuh ke `<body>`. Nyalakan toggle satu per satu, atau tekan **Buat jadi benar**.',
+  },
+}
 
 type Opts = { focusIn: boolean; trap: boolean; escape: boolean; restore: boolean; aria: boolean; inert: boolean }
 type LogItem = { id: number; desc: string; inside: boolean | null; warn: boolean }
 
 const OFF: Opts = { focusIn: false, trap: false, escape: false, restore: false, aria: false, inert: false }
-const LABELS: Record<keyof Opts, string> = {
-  focusIn: 'Move focus into the dialog on open',
-  trap: 'Trap Tab / Shift+Tab inside the dialog',
-  escape: 'Close on Escape',
-  restore: 'Restore focus to the trigger on close',
-  aria: 'role="dialog" + aria-modal + aria-labelledby',
-  inert: 'Make the background inert',
-}
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea, select, [tabindex]:not([tabindex="-1"])'
 
 function describe(el: Element) {
@@ -22,6 +58,8 @@ function describe(el: Element) {
 }
 
 export default function FocusTrap() {
+  const t = T[useLang()]
+  const LABELS = t.labels
   const [opts, setOpts] = useState<Opts>(OFF)
   const [open, setOpen] = useState(false)
   const [log, setLog] = useState<LogItem[]>([])
@@ -51,7 +89,7 @@ export default function FocusTrap() {
       // Without restoration, focus falls back to <body> when the focused node unmounts.
       setTimeout(() => {
         const a = document.activeElement
-        if (!a || a === document.body) push('<body>: focus lost, keyboard user is back at the top of the page', null, true)
+        if (!a || a === document.body) push(T[getLang()].lost, null, true)
       }, 50)
     }
   }
@@ -102,12 +140,12 @@ export default function FocusTrap() {
   const allOn = Object.values(opts).every(Boolean)
 
   const checks: { label: string; pass: boolean }[] = [
-    { label: 'Keyboard users land inside the dialog when it opens', pass: opts.focusIn },
-    { label: 'Tab cannot reach the page behind the dialog', pass: opts.trap || opts.inert },
-    { label: 'Background is hidden from screen readers & clicks', pass: opts.inert },
-    { label: 'Escape dismisses the dialog', pass: opts.escape },
-    { label: 'Focus returns to "Delete project" afterwards', pass: opts.restore },
-    { label: 'Screen readers announce "Delete project?, dialog"', pass: opts.aria },
+    { label: t.c1, pass: opts.focusIn },
+    { label: t.c2, pass: opts.trap || opts.inert },
+    { label: t.c3, pass: opts.inert },
+    { label: t.c4, pass: opts.escape },
+    { label: t.c5, pass: opts.restore },
+    { label: t.c6, pass: opts.aria },
   ]
 
   const bgLink = { color: 'var(--accent)' }
@@ -124,10 +162,10 @@ export default function FocusTrap() {
         </div>
         <div className="row">
           <button className="btn sm primary" onClick={() => setOpts({ focusIn: true, trap: true, escape: true, restore: true, aria: true, inert: true })} disabled={allOn}>
-            Make it correct
+            {t.correct}
           </button>
-          <button className="btn sm ghost" onClick={() => setOpts(OFF)}>Break it</button>
-          <button className="btn sm ghost" onClick={() => setLog([])}>Clear log</button>
+          <button className="btn sm ghost" onClick={() => setOpts(OFF)}>{t.breakIt}</button>
+          <button className="btn sm ghost" onClick={() => setLog([])}>{t.clear}</button>
         </div>
       </div>
       <div className="grid cols-2" style={{ gap: 10 }}>
@@ -136,17 +174,17 @@ export default function FocusTrap() {
             <div className="row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
               <strong>Acme Projects</strong>
               <nav className="row" style={{ gap: 10, fontSize: '0.85rem' }}>
-                <a href="#home" style={bgLink} onClick={e => e.preventDefault()}>Home</a>
-                <a href="#settings" style={bgLink} onClick={e => e.preventDefault()}>Settings</a>
+                <a href="#home" style={bgLink} onClick={e => e.preventDefault()}>{t.home}</a>
+                <a href="#settings" style={bgLink} onClick={e => e.preventDefault()}>{t.settings}</a>
               </nav>
             </div>
-            <p style={{ fontSize: '0.85rem' }}>Project "Website redesign" · 12 tasks</p>
+            <p style={{ fontSize: '0.85rem' }}>{t.project}</p>
             <div className="row">
-              <button className="btn sm" onClick={() => push('background "Share" clicked', null, open)}>Share</button>
-              <button ref={triggerRef} className="btn sm danger" onClick={() => setOpen(true)}>Delete project</button>
+              <button className="btn sm" onClick={() => push(t.shareClicked, null, open)}>{t.share}</button>
+              <button ref={triggerRef} className="btn sm danger" onClick={() => setOpen(true)}>{t.del}</button>
             </div>
             <p style={{ fontSize: '0.8rem' }}>
-              <a href="#help" style={bgLink} onClick={e => e.preventDefault()}>Help center</a>
+              <a href="#help" style={bgLink} onClick={e => e.preventDefault()}>{t.help}</a>
             </p>
           </div>
           {open && (
@@ -157,12 +195,12 @@ export default function FocusTrap() {
                 className="card"
                 style={{ width: '100%', maxWidth: 300, boxShadow: 'var(--shadow)', background: 'var(--bg-elev)', padding: 14 }}
               >
-                <h4 id="ft-title" style={{ margin: '0 0 6px' }}>Delete project?</h4>
-                <p style={{ fontSize: '0.8rem', margin: '0 0 8px' }}>This cannot be undone. Type the project name to confirm.</p>
-                <input type="text" placeholder="Website redesign" aria-label="Project name" style={{ width: '100%', boxSizing: 'border-box' }} />
+                <h4 id="ft-title" style={{ margin: '0 0 6px' }}>{t.title}</h4>
+                <p style={{ fontSize: '0.8rem', margin: '0 0 8px' }}>{t.body}</p>
+                <input type="text" placeholder="Website redesign" aria-label={t.projectName} style={{ width: '100%', boxSizing: 'border-box' }} />
                 <div className="row" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
-                  <button className="btn sm" onClick={close}>Cancel</button>
-                  <button className="btn sm danger" onClick={close}>Delete</button>
+                  <button className="btn sm" onClick={close}>{t.cancel}</button>
+                  <button className="btn sm danger" onClick={close}>{t.delete}</button>
                 </div>
               </div>
             </div>
@@ -170,20 +208,20 @@ export default function FocusTrap() {
         </div>
         <div className="stack" style={{ gap: 10, minWidth: 0 }}>
           <div>
-            <h4 style={{ margin: '0 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>Focus log</h4>
+            <h4 style={{ margin: '0 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t.focusLog}</h4>
             <div className="log" aria-live="polite" style={{ minHeight: 120 }}>
-              {log.length === 0 && <div className="subtle">Click "Delete project", then press Tab a few times.</div>}
+              {log.length === 0 && <div className="subtle">{t.empty}</div>}
               {log.map(l => (
                 <div key={l.id} style={{ color: l.warn ? 'var(--bad)' : undefined, overflowWrap: 'anywhere' }}>
                   {l.warn ? '⚠ ' : ''}
                   {l.desc}
-                  {l.inside === null ? '' : l.inside ? ' · inside dialog' : ' · OUTSIDE open dialog'}
+                  {l.inside === null ? '' : l.inside ? t.inside : t.outside}
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <h4 style={{ margin: '0 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>Checklist</h4>
+            <h4 style={{ margin: '0 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t.checklist}</h4>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: '0.82rem' }}>
               {checks.map(c => (
                 <li key={c.label} style={{ color: c.pass ? 'var(--ok)' : 'var(--bad)' }}>
@@ -196,8 +234,8 @@ export default function FocusTrap() {
       </div>
       <Note>
         {allOn
-          ? 'All requirements pass: focus moves in, Tab cycles inside, Escape closes, focus returns to the trigger and the background is `inert`. The native `<dialog>` with `showModal()`, or headless libraries like Radix / React Aria, give you all of this for free.'
-          : 'Open the dialog with the keyboard and press **Tab**: with these toggles off, focus stays behind the dialog or wanders back to the page (red lines in the log). Closing without restoration drops focus to `<body>`. Turn the toggles on one by one, or press **Make it correct**.'}
+          ? t.allOn
+          : t.off}
       </Note>
     </div>
   )

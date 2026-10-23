@@ -1,12 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { dayKey } from '../store/logic'
+import { defineStrings, useStrings } from '../i18n'
+
+const S = defineStrings({
+  en: { complete: '{n}% complete', activity: 'Learning activity over the last six months', action: '{d}: {n} action', actions: '{d}: {n} actions' },
+  id: { complete: 'selesai {n}%', activity: 'Aktivitas belajar selama enam bulan terakhir', action: '{d}: {n} aktivitas', actions: '{d}: {n} aktivitas' },
+})
 
 export function Ring({ value, size = 64, stroke = 7, label }: { value: number; size?: number; stroke?: number; label?: ReactNode }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const pct = Math.max(0, Math.min(1, value))
+  const s = useStrings(S)
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${Math.round(pct * 100)}% complete`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={s('complete', { n: Math.round(pct * 100) })}>
       <defs>
         <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="var(--accent)" />
@@ -51,11 +58,12 @@ export function Heatmap({ activity, weeks = 26 }: { activity: Record<string, num
     const key = dayKey(d)
     cells.push({ key, n: activity[key] ?? 0 })
   }
+  const s = useStrings(S)
   const level = (n: number) => (n === 0 ? 0 : n < 3 ? 1 : n < 6 ? 2 : n < 10 ? 3 : 4)
   return (
-    <div className="heatmap" aria-label="Learning activity over the last six months">
+    <div className="heatmap" aria-label={s('activity')}>
       {cells.map(c => (
-        <i key={c.key} data-l={level(c.n)} title={`${c.key}: ${c.n} action${c.n === 1 ? '' : 's'}`} />
+        <i key={c.key} data-l={level(c.n)} title={s(c.n === 1 ? 'action' : 'actions', { d: c.key, n: c.n })} />
       ))}
     </div>
   )

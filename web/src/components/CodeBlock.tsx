@@ -1,4 +1,10 @@
 import { useState, type ReactNode } from 'react'
+import { defineStrings, useStrings } from '../i18n'
+
+const S = defineStrings({
+  en: { aria: 'Copy code', copy: 'Copy', copied: 'Copied ✓' },
+  id: { aria: 'Salin kode', copy: 'Salin', copied: 'Tersalin ✓' },
+})
 
 const KEYWORDS = new Set(
   'const let var function return if else for while do switch case break continue new class extends import export from default async await try catch finally throw typeof instanceof in of type interface enum as satisfies keyof readonly void null undefined true false this super yield delete implements public private protected static get set declare'.split(
@@ -43,6 +49,7 @@ export function highlight(code: string): ReactNode[] {
 
 export function CodeBlock({ code, title }: { code: string; title?: string }) {
   const [copied, setCopied] = useState(false)
+  const s = useStrings(S)
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(code)
@@ -56,8 +63,8 @@ export function CodeBlock({ code, title }: { code: string; title?: string }) {
     <div className="codeblock">
       <div className="codeblock-head">
         <span>{title ?? ''}</span>
-        <button className="btn ghost sm" onClick={copy} aria-label="Copy code">
-          {copied ? 'Copied ✓' : 'Copy'}
+        <button className="btn ghost sm" onClick={copy} aria-label={s('aria')}>
+          {copied ? s('copied') : s('copy')}
         </button>
       </div>
       <pre>

@@ -445,3 +445,8 @@ body.nav-locked { overflow: hidden; }
 .sidebar:hover, .lesson-aside:hover { scrollbar-color: var(--scroll-thumb) transparent; }
 .sidebar::-webkit-scrollbar-thumb, .lesson-aside::-webkit-scrollbar-thumb { background: transparent; }
 .sidebar:hover::-webkit-scrollbar-thumb, .lesson-aside:hover::-webkit-scrollbar-thumb { background: var(--scroll-thumb); }
+
+/* Language switch */
+.lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.lang-switch button { font: inherit; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; padding: 4px 8px; border: 0; background: transparent; color: var(--text-3); cursor: pointer; }
+.lang-switch button[aria-checked="true"] { background: var(--accent); color: var(--accent-text); }

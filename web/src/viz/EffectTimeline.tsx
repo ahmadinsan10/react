@@ -1,5 +1,21 @@
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Note, Toggle } from './common'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    connected: 'Connected to', theme: 'theme', unmount: 'Unmount <Chat>', mount: 'Mount <Chat>', toggleTheme: 'Toggle theme (not a dependency)',
+    strict: 'Simulate StrictMode mount', clear: 'Clear log', unmounted: '<Chat> is unmounted', empty: 'Interact with the controls to see the effect lifecycle…',
+    setup: 'effect setup', cleanup: 'effect cleanup', commit: 'commit',
+    note: 'Try each control. **Changing roomId** runs cleanup for the old room *then* setup for the new one. **Toggling theme** re-renders but the effect does not re-run (theme is not a dependency). **Unmounting** runs the final cleanup. **StrictMode** in development mounts → cleans up → mounts again to prove your cleanup works.',
+  },
+  id: {
+    connected: 'Terhubung ke', theme: 'tema', unmount: 'Unmount <Chat>', mount: 'Mount <Chat>', toggleTheme: 'Ganti tema (bukan dependency)',
+    strict: 'Simulasikan mount StrictMode', clear: 'Bersihkan log', unmounted: '<Chat> sedang di-unmount', empty: 'Mainkan kontrol di atas untuk melihat siklus hidup effect…',
+    setup: 'setup effect', cleanup: 'cleanup effect', commit: 'commit',
+    note: 'Coba setiap kontrol. **Mengganti roomId** menjalankan cleanup untuk room lama, *baru kemudian* setup untuk room baru. **Mengganti tema** memicu re-render, tapi effect tidak dijalankan ulang (theme bukan dependency). **Unmount** menjalankan cleanup terakhir. **StrictMode** di development melakukan mount → cleanup → mount lagi untuk membuktikan cleanup kamu bekerja dengan benar.',
+  },
+} as const
 
 // A tiny external log store, so the child's effects can log without re-rendering the parent mid-effect.
 type Entry = { t: number; kind: 'render' | 'setup' | 'cleanup' | 'layout'; text: string }
@@ -45,9 +61,10 @@ const Chat = memo(function Chat({ roomId, theme, simulateStrict }: { roomId: str
     return run()
   }, [roomId]) // eslint-disable-line react-hooks/exhaustive-deps -- simulateStrict only affects the very first mount
 
+  const t = T[useLang()]
   return (
     <div className="chip a" style={{ display: 'inline-block' }}>
-      💬 Connected to <strong>#{roomId}</strong> · theme: {theme}
+      💬 {t.connected} <strong>#{roomId}</strong> · {t.theme}: {theme}
     </div>
   )
 })
@@ -61,6 +78,7 @@ export default function EffectTimeline() {
   const [strict, setStrict] = useState(false)
   const [mountKey, setMountKey] = useState(0)
   const log = useEntries()
+  const t = T[useLang()]
   const t0 = log[0]?.t ?? 0
 
   return (
@@ -73,7 +91,7 @@ export default function EffectTimeline() {
       </pre>
       <div className="viz-controls">
         <button className="btn sm" onClick={() => setMounted(m => !m)}>
-          {mounted ? 'Unmount <Chat>' : 'Mount <Chat>'}
+          {mounted ? t.unmount : t.mount}
         </button>
         <label className="row" style={{ gap: 6 }}>
           roomId
@@ -83,8 +101,8 @@ export default function EffectTimeline() {
             <option>rust</option>
           </select>
         </label>
-        <button className="btn sm" onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
-          Toggle theme (not a dependency)
+        <button className="btn sm" onClick={() => setTheme(th => (th === 'dark' ? 'light' : 'dark'))}>
+          {t.toggleTheme}
         </button>
         <Toggle
           checked={strict}
@@ -94,16 +112,16 @@ export default function EffectTimeline() {
             setMountKey(k => k + 1)
           }}
         >
-          Simulate StrictMode mount
+          {t.strict}
         </Toggle>
         <button className="btn sm ghost" onClick={clear}>
-          Clear log
+          {t.clear}
         </button>
       </div>
       <div className="viz-stage">
-        <div style={{ minHeight: 36, marginBottom: 10 }}>{mounted ? <Chat key={mountKey} roomId={room} theme={theme} simulateStrict={strict} /> : <span className="subtle">&lt;Chat&gt; is unmounted</span>}</div>
+        <div style={{ minHeight: 36, marginBottom: 10 }}>{mounted ? <Chat key={mountKey} roomId={room} theme={theme} simulateStrict={strict} /> : <span className="subtle">{t.unmounted}</span>}</div>
         <div className="log" aria-live="polite">
-          {log.length === 0 && <div className="subtle">Interact with the controls to see the effect lifecycle…</div>}
+          {log.length === 0 && <div className="subtle">{t.empty}</div>}
           {log.map((e, i) => (
             <div key={i} style={{ color: COLORS[e.kind] }}>
               <span style={{ color: 'var(--text-3)' }}>+{Math.round(e.t - t0).toString().padStart(5, ' ')}ms </span>
@@ -113,14 +131,12 @@ export default function EffectTimeline() {
           ))}
         </div>
         <div className="viz-legend" style={{ marginTop: 8 }}>
-          <span style={{ ['--c' as string]: 'var(--ok)' }}>effect setup</span>
-          <span style={{ ['--c' as string]: 'var(--bad)' }}>effect cleanup</span>
-          <span style={{ ['--c' as string]: 'var(--text-3)' }}>commit</span>
+          <span style={{ ['--c' as string]: 'var(--ok)' }}>{t.setup}</span>
+          <span style={{ ['--c' as string]: 'var(--bad)' }}>{t.cleanup}</span>
+          <span style={{ ['--c' as string]: 'var(--text-3)' }}>{t.commit}</span>
         </div>
       </div>
-      <Note>
-        Try each control. **Changing roomId** runs cleanup for the old room *then* setup for the new one. **Toggling theme** re-renders but the effect does not re-run (theme is not a dependency). **Unmounting** runs the final cleanup. **StrictMode** in development mounts → cleans up → mounts again to prove your cleanup works.
-      </Note>
+      <Note>{t.note}</Note>
     </div>
   )
 }

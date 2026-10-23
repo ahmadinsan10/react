@@ -10,6 +10,7 @@ A web app for the roadmap in [`../GUIDE.md`](../GUIDE.md): lessons, interactive 
 - **Spaced repetition** (Leitner boxes: 1, 3, 7, 16, 35 days), plus a review queue and a mixed exam mode
 - **Progress tracker**: weighted per-level progress, streak, 6-month activity heatmap, roadmap map, a projected finish date, per-level notes with autosave, and the expert checklist
 - **Command palette** (`Ctrl+K` or `/`) that searches every lesson, demo and question
+- **Bilingual: English and Bahasa Indonesia.** Every lesson, quiz, visualization and the whole interface. The Indonesian is written natively (see `src/i18n/STYLE-ID.md`), not machine-translated; code examples are byte-identical across languages (enforced by tests)
 - Dark/light themes, responsive layout, keyboard support, and accessible markup
 - **Cross-device sync** (Vercel Function + Upstash Redis) with three-way merge and conflict-safe writes; also syncs across tabs, and JSON export/import
 - **App-like**: installable (web app manifest), works offline (service worker), bottom tab bar on phones, collapsible sidebar, Back restores scroll position

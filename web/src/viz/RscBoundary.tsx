@@ -1,5 +1,23 @@
 import { useState } from 'react'
 import { Note } from './common'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    dbErr: (l: string) => `${l} reads the database but became a Client Component: server-only code can't run in the browser.`,
+    stateErr: (l: string) => `${l} uses useState/onClick but is a Server Component: add 'use client'.`,
+    puzzle: 'Puzzle: fix every build error with the smallest client bundle. Click a component to toggle', pass1: 'Pass <Reviews> to Tabs as', pass2: '(instead of importing it inside Tabs)',
+    aria: 'Server and client component tree', dashed: 'dashed = passed as children', shipped: 'Client JS shipped', errors: 'Build errors', noErrors: '✓ No errors',
+    note: "`'use client'` marks a **boundary**: that component and everything it *imports* becomes client code. Untick \"Pass Reviews as children\": Reviews (and its 70kb Markdown library) gets pulled into the client bundle and can no longer read the database. Passing server components *as children* keeps them on the server even inside a client component. Aim to push `'use client'` down to the leaves.",
+  },
+  id: {
+    dbErr: (l: string) => `${l} membaca database tapi berubah jadi Client Component: kode khusus server tidak bisa jalan di browser.`,
+    stateErr: (l: string) => `${l} memakai useState/onClick tapi masih Server Component: tambahkan 'use client'.`,
+    puzzle: 'Teka-teki: bereskan semua error build dengan client bundle sekecil mungkin. Klik sebuah component untuk menyalakan/mematikan', pass1: 'Kirim <Reviews> ke Tabs sebagai', pass2: '(bukan meng-import-nya di dalam Tabs)',
+    aria: 'Pohon Server dan Client Component', dashed: 'garis putus-putus = dikirim sebagai children', shipped: 'JS yang dikirim ke client', errors: 'Error build', noErrors: '✓ Tidak ada error',
+    note: "`'use client'` menandai sebuah **batas (boundary)**: component itu beserta semua yang di-*import*-nya menjadi kode client. Hapus centang \"Kirim Reviews sebagai children\": Reviews (beserta library Markdown 70kb-nya) ikut tertarik ke client bundle dan tidak bisa lagi membaca database. Mengirim Server Component *sebagai children* membuatnya tetap di server, walaupun berada di dalam Client Component. Usahakan `'use client'` didorong sejauh mungkin ke komponen paling ujung (leaf).",
+  },
+} as const
 
 type Node = {
   id: string
@@ -26,6 +44,7 @@ const NODES: Node[] = [
 ]
 
 export default function RscBoundary() {
+  const t = T[useLang()]
   const [marked, setMarked] = useState<Set<string>>(new Set(['gallery', 'tabs']))
   const [slotMode, setSlotMode] = useState(true)
 
@@ -40,8 +59,8 @@ export default function RscBoundary() {
 
   const errors = NODES.flatMap(n => {
     const c = isClient(n)
-    if (c && n.needs === 'db') return [`${n.label} reads the database but became a Client Component: server-only code can't run in the browser.`]
-    if (!c && n.needs === 'state') return [`${n.label} uses useState/onClick but is a Server Component: add 'use client'.`]
+    if (c && n.needs === 'db') return [t.dbErr(n.label)]
+    if (!c && n.needs === 'state') return [t.stateErr(n.label)]
     return []
   })
   const bundle = NODES.filter(isClient).reduce((s, n) => s + n.kb, 0)
@@ -56,15 +75,15 @@ export default function RscBoundary() {
   return (
     <div>
       <div className="viz-controls">
-        <span className="subtle">Puzzle: fix every build error with the smallest client bundle. Click a component to toggle <code>'use client'</code>.</span>
+        <span className="subtle">{t.puzzle} <code>'use client'</code>.</span>
         <label className="row" style={{ gap: 6, fontSize: '0.88rem' }}>
           <input type="checkbox" checked={slotMode} onChange={e => setSlotMode(e.target.checked)} />
-          Pass &lt;Reviews&gt; to Tabs as <code>children</code> (instead of importing it inside Tabs)
+          {t.pass1} <code>children</code> {t.pass2}
         </label>
       </div>
       <div className="grid cols-2" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)' }}>
         <div className="viz-stage">
-          <svg viewBox="0 0 620 340" width="100%" role="img" aria-label="Server and client component tree">
+          <svg viewBox="0 0 620 340" width="100%" role="img" aria-label={t.aria}>
             {NODES.filter(n => n.parent).map(n => {
               const p = NODES.find(x => x.id === n.parent)!
               const slot = n.id === 'reviews' ? slotMode : n.via === 'slot'
@@ -95,17 +114,17 @@ export default function RscBoundary() {
           <div className="viz-legend">
             <span style={{ ['--c' as string]: 'var(--violet)' }}>Server Component</span>
             <span style={{ ['--c' as string]: 'var(--warn)' }}>Client Component</span>
-            <span style={{ ['--c' as string]: 'var(--text-3)' }}>dashed = passed as children</span>
+            <span style={{ ['--c' as string]: 'var(--text-3)' }}>{t.dashed}</span>
           </div>
         </div>
         <div className="viz-stage">
           <div className="stat">
-            <div className="label">Client JS shipped</div>
+            <div className="label">{t.shipped}</div>
             <div className="value" style={{ color: bundle > 60 ? 'var(--bad)' : 'var(--ok)' }}>{bundle} kb</div>
           </div>
-          <h4 style={{ margin: '14px 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>Build errors</h4>
+          <h4 style={{ margin: '14px 0 6px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-3)' }}>{t.errors}</h4>
           {errors.length === 0 ? (
-            <span className="pill ok">✓ No errors</span>
+            <span className="pill ok">{t.noErrors}</span>
           ) : (
             errors.map(e => (
               <div key={e} className="chip r" style={{ fontFamily: 'var(--sans)' }}>
@@ -115,9 +134,7 @@ export default function RscBoundary() {
           )}
         </div>
       </div>
-      <Note>
-        `'use client'` marks a **boundary**: that component and everything it *imports* becomes client code. Untick "Pass Reviews as children": Reviews (and its 70kb Markdown library) gets pulled into the client bundle and can no longer read the database. Passing server components *as children* keeps them on the server even inside a client component. Aim to push `'use client'` down to the leaves.
-      </Note>
+      <Note>{t.note}</Note>
     </div>
   )
 }

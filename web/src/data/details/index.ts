@@ -1,4 +1,5 @@
 import type { TopicDetail, VizGuide } from '../types'
+import type { Lang } from '../../i18n/lang'
 
 type Details = Record<string, TopicDetail>
 
@@ -19,21 +20,43 @@ const loaders: Record<number, () => Promise<{ default: Details }>> = {
   12: () => import('./level12'),
 }
 
-// Cache promises so `use()` receives the same promise across renders (a requirement of `use`).
-const cache = new Map<number, Promise<Details>>()
+// Indonesian lessons: same shape, keyed by topic id. Files are optional; missing topics fall back to English.
+const idLoaders = import.meta.glob<{ default: Details }>('./id/level*.ts')
 
-export function levelDetails(level: number): Promise<Details> {
-  let p = cache.get(level)
+// Cache promises so `use()` receives the same promise across renders (a requirement of `use`).
+const cache = new Map<string, Promise<Details>>()
+
+function loadEn(level: number): Promise<Details> {
+  const load = loaders[level]
+  return load ? load().then(m => m.default) : Promise.resolve({})
+}
+
+export function levelDetails(level: number, lang: Lang = 'en'): Promise<Details> {
+  const key = `${lang}:${level}`
+  let p = cache.get(key)
   if (!p) {
-    const load = loaders[level]
-    p = load ? load().then(m => m.default) : Promise.resolve({})
-    cache.set(level, p)
+    if (lang === 'en') p = loadEn(level)
+    else {
+      const loadId = idLoaders[`./id/level${level}.ts`]
+      p = Promise.all([loadEn(level), loadId ? loadId().then(m => m.default) : Promise.resolve({} as Details)]).then(([en, id]) => ({ ...en, ...id }))
+    }
+    cache.set(key, p)
   }
   return p
 }
 
-let guides: Promise<Record<string, VizGuide>> | null = null
-export function vizGuides() {
-  guides ??= import('../vizGuides').then(m => m.VIZ_GUIDES)
-  return guides
+const guideCache = new Map<Lang, Promise<Record<string, VizGuide>>>()
+export function vizGuides(lang: Lang = 'en') {
+  let p = guideCache.get(lang)
+  if (!p) {
+    const en = import('../vizGuides').then(m => m.VIZ_GUIDES)
+    p =
+      lang === 'en'
+        ? en
+        : Promise.all([en, import.meta.glob<{ VIZ_GUIDES_ID: Record<string, VizGuide> }>('../vizGuides.id.ts')['../vizGuides.id.ts']?.() ?? Promise.resolve({ VIZ_GUIDES_ID: {} })]).then(
+            ([e, i]) => ({ ...e, ...i.VIZ_GUIDES_ID }),
+          )
+    guideCache.set(lang, p)
+  }
+  return p
 }

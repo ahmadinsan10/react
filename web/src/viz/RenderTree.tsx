@@ -1,5 +1,29 @@
 import { useState } from 'react'
 import { Note, Segmented, Toggle } from './common'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    updateType: 'Update type', setState: 'setState in a component', context: 'Change context value', memo: 'React Compiler / memo',
+    liftUp: 'Lift ResultList up (pass as children)', reset: 'Reset counts', aria: 'Component tree showing which components re-render',
+    node: (l: string, hit: boolean, n: number) => `${l}${hit ? ', re-rendered' : ''}. Rendered ${n} times`,
+    lgOrigin: 'state changed here', lgRe: 're-rendered', lgCtx: 'reads ThemeContext', lgCount: 'render count',
+    nMemo: 'With memoization, children whose props did not change are skipped — only the component that owns the state re-renders. This is what the React Compiler does for you automatically.',
+    nLift: 'Click Page: ResultList and its rows no longer re-render, because App created that element and passed it as children. Page re-rendering reuses the same element. No memo needed!',
+    nState: 'Click any component to call setState inside it. Without memoization, the whole subtree below it re-renders — even components whose props did not change.',
+    nCtx: 'Changing a context value re-renders every consumer, wherever it is, even through memoized parents. Split contexts so components only subscribe to what they use.',
+  },
+  id: {
+    updateType: 'Jenis update', setState: 'setState di sebuah component', context: 'Ubah nilai context', memo: 'React Compiler / memo',
+    liftUp: 'Angkat ResultList ke atas (kirim sebagai children)', reset: 'Reset hitungan', aria: 'Pohon component yang menunjukkan component mana saja yang re-render',
+    node: (l: string, hit: boolean, n: number) => `${l}${hit ? ', di-render ulang' : ''}. Sudah di-render ${n} kali`,
+    lgOrigin: 'state berubah di sini', lgRe: 'di-render ulang', lgCtx: 'membaca ThemeContext', lgCount: 'jumlah render',
+    nMemo: 'Dengan memoization, child yang props-nya tidak berubah akan dilewati, hanya component pemilik state yang re-render. Inilah yang dikerjakan React Compiler untukmu secara otomatis.',
+    nLift: 'Klik Page: ResultList dan baris-barisnya tidak lagi re-render, karena App yang membuat element itu lalu mengirimnya sebagai children. Saat Page re-render, element yang sama dipakai ulang. Tidak perlu memo!',
+    nState: 'Klik component mana saja untuk memanggil setState di dalamnya. Tanpa memoization, seluruh subtree di bawahnya ikut re-render, bahkan component yang props-nya tidak berubah.',
+    nCtx: 'Mengubah nilai context membuat setiap consumer re-render, di mana pun posisinya, bahkan menembus parent yang sudah di-memo. Pecah context-nya supaya component hanya subscribe ke apa yang benar-benar dipakai.',
+  },
+} as const
 
 type N = { id: string; parent: string | null; label: string; x: number; y: number; consumer?: boolean; slot?: boolean }
 
@@ -49,6 +73,7 @@ function simulate(origin: string, kind: 'state' | 'context', memo: boolean, lift
 }
 
 export default function RenderTree() {
+  const t = T[useLang()]
   const [memo, setMemo] = useState(false)
   const [liftUp, setLiftUp] = useState(false)
   const [mode, setMode] = useState<'state' | 'context'>('state')
@@ -61,7 +86,7 @@ export default function RenderTree() {
     const r = simulate(id, mode, memo, liftUp)
     setOrigin(id)
     setLast(r)
-    setTick(t => t + 1)
+    setTick(x => x + 1)
     setCounts(c => {
       const next = { ...c }
       r.forEach(n => (next[n] = (next[n] ?? 0) + 1))
@@ -75,26 +100,26 @@ export default function RenderTree() {
     <div>
       <div className="viz-controls">
         <Segmented
-          label="Update type"
+          label={t.updateType}
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'state', label: 'setState in a component' },
-            { value: 'context', label: 'Change context value' },
+            { value: 'state', label: t.setState },
+            { value: 'context', label: t.context },
           ]}
         />
         <Toggle checked={memo} onChange={setMemo}>
-          React Compiler / memo
+          {t.memo}
         </Toggle>
         <Toggle checked={liftUp} onChange={setLiftUp}>
-          Lift ResultList up (pass as children)
+          {t.liftUp}
         </Toggle>
         <button className="btn sm ghost" onClick={() => { setCounts({}); setLast(new Set()) }}>
-          Reset counts
+          {t.reset}
         </button>
       </div>
       <div className="viz-stage">
-        <svg viewBox="0 0 620 390" width="100%" role="img" aria-label="Component tree showing which components re-render">
+        <svg viewBox="0 0 620 390" width="100%" role="img" aria-label={t.aria}>
           {NODES.filter(n => n.parent).map(n => {
             const p = byId[n.parent!]!
             return <line key={n.id} x1={p.x} y1={p.y + 16} x2={n.x} y2={n.y - 16} stroke="var(--border)" strokeWidth={2} />
@@ -109,7 +134,7 @@ export default function RenderTree() {
                 onClick={() => (mode === 'state' ? trigger(n.id) : trigger('theme'))}
                 role="button"
                 tabIndex={0}
-                aria-label={`${n.label}${hit ? ', re-rendered' : ''}. Rendered ${counts[n.id] ?? 0} times`}
+                aria-label={t.node(n.label, hit, counts[n.id] ?? 0)}
                 onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && trigger(mode === 'state' ? n.id : 'theme')}
               >
                 <rect
@@ -135,20 +160,20 @@ export default function RenderTree() {
           })}
         </svg>
         <div className="viz-legend">
-          <span style={{ ['--c' as string]: 'var(--bad)' }}>state changed here</span>
-          <span style={{ ['--c' as string]: 'var(--warn)' }}>re-rendered</span>
-          <span style={{ ['--c' as string]: 'var(--violet)' }}>reads ThemeContext</span>
-          <span style={{ ['--c' as string]: 'var(--accent)' }}>render count</span>
+          <span style={{ ['--c' as string]: 'var(--bad)' }}>{t.lgOrigin}</span>
+          <span style={{ ['--c' as string]: 'var(--warn)' }}>{t.lgRe}</span>
+          <span style={{ ['--c' as string]: 'var(--violet)' }}>{t.lgCtx}</span>
+          <span style={{ ['--c' as string]: 'var(--accent)' }}>{t.lgCount}</span>
         </div>
       </div>
       <Note>
         {mode === 'state'
           ? memo
-            ? 'With memoization, children whose props did not change are skipped — only the component that owns the state re-renders. This is what the React Compiler does for you automatically.'
+            ? t.nMemo
             : liftUp
-              ? 'Click Page: ResultList and its rows no longer re-render, because App created that element and passed it as children. Page re-rendering reuses the same element. No memo needed!'
-              : 'Click any component to call setState inside it. Without memoization, the whole subtree below it re-renders — even components whose props did not change.'
-          : 'Changing a context value re-renders every consumer, wherever it is, even through memoized parents. Split contexts so components only subscribe to what they use.'}
+              ? t.nLift
+              : t.nState
+          : t.nCtx}
       </Note>
     </div>
   )

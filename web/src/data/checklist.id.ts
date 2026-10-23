@@ -1,0 +1,42 @@
+import type { ChecklistId } from '../i18n/content'
+
+export const CHECKLIST_ID: ChecklistId = {
+  checklist: [
+    'Menjelaskan fase render dan commit, serta apa saja yang memicu re-render',
+    'Menjelaskan kenapa key itu penting, lengkap dengan contoh bug akibat key berupa index',
+    'Membuang useEffect yang tidak perlu dari kode orang lain',
+    'Mendiagnosis dan memperbaiki bug stale closure',
+    'Menentukan di mana state sebaiknya disimpan, dan bisa mempertahankan alasannya',
+    'Merancang API compound component yang fleksibel dan aksesibel',
+    'Membangun modal, combobox, dan menu yang aksesibel dari nol',
+    'Melakukan profiling pada aplikasi yang lambat dan memperbaikinya berdasarkan bukti',
+    'Menjelaskan Server vs Client Components serta batas serialisasinya',
+    'Menjelaskan caching di Next.js (\'use cache\', cacheLife, cacheTag) dan revalidasi',
+    'Mencegah race condition saat fetching data',
+    'Menulis test yang tetap lolos setelah refactor',
+    'Menyiapkan monorepo dengan package bersama dan CI',
+    'Mengamankan aplikasi dari XSS dan bocornya secret',
+    'Membangun mini-React dari nol',
+    'Membimbing orang lain menguasai semua hal di atas',
+  ],
+  mistakes: [
+    ['Menyalin props ke dalam state', 'Turunkan nilainya saat render; pakai key untuk reset'],
+    ['useEffect untuk menghitung nilai turunan', 'Hitung langsung di body komponen'],
+    ['useEffect untuk merespons event', 'Taruh logikanya di event handler'],
+    ['Fetch di effect tanpa cleanup', 'AbortController / flag ignore, atau TanStack Query'],
+    ['Memutasi state (arr.push, obj.x = 1)', 'Buat array dan objek baru'],
+    ['Index array sebagai key untuk list dinamis', 'ID unik yang stabil'],
+    ['Komponen raksasa 500 baris', 'Pecah per tanggung jawab; ekstrak jadi hook'],
+    ['Satu context global yang sangat besar', 'Pecah context atau pakai store dengan selector'],
+    ['memo/useCallback di mana-mana "buat jaga-jaga"', 'Aktifkan React Compiler; memoization manual hanya kalau ada bukti dari profiling'],
+    ['Menyimpan token di localStorage', 'Cookie httpOnly, Secure, SameSite'],
+    ['<div onClick> sebagai tombol', 'Pakai <button>; utamakan HTML semantik'],
+    ['Mengetes detail implementasi', 'Tes apa yang dilihat dan dilakukan pengguna'],
+    ['Mengabaikan state loading/error/kosong', 'Modelkan semua state secara eksplisit dengan union'],
+  ],
+  capstones: [
+    ['Board kolaboratif real-time', 'Presence dan kursor multiplayer (WebSockets, Liveblocks, atau Yjs), dukungan offline, undo/redo.'],
+    ['Dashboard analitik SaaS', 'Auth multi-tenant, akses berbasis role, tabel dan chart berukuran besar, ekspor CSV, halaman billing (Stripe test mode).'],
+    ['Platform belajar', 'Kursus, video player, pelacakan progres, kuis, CMS admin, i18n. (Mirip aplikasi ini, tapi lebih besar!)'],
+  ],
+}

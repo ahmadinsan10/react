@@ -1,34 +1,50 @@
 import { useEffect, useRef, useState } from 'react'
 import { Note } from './common'
+import { useLang } from '../i18n/lang'
 
 const VARIANTS = [
   {
     id: 'snapshot',
     title: 'Snapshot value ×3',
+    titleId: 'Nilai snapshot ×3',
     code: 'setCount(count + 1)\nsetCount(count + 1)\nsetCount(count + 1)',
     note: '`count` is a snapshot for this render. All three calls compute the same value, so the count only goes up by 1.',
+    noteId: '`count` adalah snapshot untuk render ini. Ketiga panggilan menghitung nilai yang sama, jadi count cuma bertambah 1.',
   },
   {
     id: 'updater',
     title: 'Updater function ×3',
+    titleId: 'Fungsi updater ×3',
     code: 'setCount(c => c + 1)\nsetCount(c => c + 1)\nsetCount(c => c + 1)',
     note: 'Updater functions are queued and each receives the result of the previous one: +3.',
+    noteId: 'Fungsi updater dimasukkan ke antrean dan masing-masing menerima hasil dari updater sebelumnya: +3.',
   },
   {
     id: 'mixed',
     title: 'Mixed',
+    titleId: 'Campuran',
     code: 'setCount(count + 5)\nsetCount(c => c + 1)\nsetCount(42)',
     note: 'React processes the queue in order: replace with count+5, then +1, then replace with 42. The last replacement wins.',
+    noteId: 'React memproses antrean secara berurutan: ganti dengan count+5, lalu +1, lalu ganti dengan 42. Penggantian terakhir yang menang.',
   },
   {
     id: 'async',
     title: 'Inside setTimeout',
+    titleId: 'Di dalam setTimeout',
     code: 'setTimeout(() => {\n  setCount(c => c + 1)\n  setFlag(f => !f)\n}, 0)',
     note: 'Since React 18, updates are batched everywhere — even in timeouts and promises. Two state updates, still one render.',
+    noteId: 'Sejak React 18, update di-batch di mana saja, bahkan di dalam timeout dan promise. Dua update state, tetap satu render.',
   },
 ] as const
 
+const T = {
+  en: { commits: 'commits so far', reset: 'Reset values', tail: 'Each click adds exactly one commit (watch **commits so far**): several updates, one render. That is batching.' },
+  id: { commits: 'commit sejauh ini', reset: 'Reset nilai', tail: 'Setiap klik menambah tepat satu commit (perhatikan **commit sejauh ini**): beberapa update, satu render. Itulah batching.' },
+} as const
+
 export default function Batching() {
+  const lang = useLang()
+  const t = T[lang]
   const [count, setCount] = useState(0)
   const [flag, setFlag] = useState(false)
   const [active, setActive] = useState<string>('snapshot')
@@ -71,7 +87,7 @@ export default function Batching() {
       <div className="grid cols-4" style={{ marginBottom: 14 }}>
         {VARIANTS.map(x => (
           <button key={x.id} className={`btn${active === x.id ? ' primary' : ''}`} onClick={() => run(x.id)} style={{ flexDirection: 'column', alignItems: 'stretch', padding: 10, whiteSpace: 'normal' }}>
-            <span>{x.title}</span>
+            <span>{lang === 'id' ? x.titleId : x.title}</span>
             <pre style={{ margin: '6px 0 0', fontSize: '0.72rem', textAlign: 'left', background: 'transparent', border: 0, padding: 0, color: 'inherit' }}>
               <code>{x.code}</code>
             </pre>
@@ -89,17 +105,17 @@ export default function Batching() {
             <div className="value">{String(flag)}</div>
           </div>
           <div className="stat">
-            <div className="label">commits so far</div>
+            <div className="label">{t.commits}</div>
             <div className="value" ref={commitsEl}>0</div>
           </div>
         </div>
         <div className="row" style={{ marginTop: 10 }}>
           <button className="btn sm ghost" onClick={() => { setCount(0); setFlag(false) }}>
-            Reset values
+            {t.reset}
           </button>
         </div>
       </div>
-      <Note>{`${v.note} Each click adds exactly one commit (watch **commits so far**): several updates, one render. That is batching.`}</Note>
+      <Note>{`${lang === 'id' ? v.noteId : v.note} ${t.tail}`}</Note>
     </div>
   )
 }

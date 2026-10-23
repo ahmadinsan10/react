@@ -1,5 +1,35 @@
 import { useMemo, useState } from 'react'
 import { Note, StepControls, Toggle, useStepper } from './common'
+import { useLang, type Lang } from '../i18n/lang'
+
+const T = {
+  en: {
+    begin: (l: string) => `beginWork(${l}): call the component / diff its children`,
+    complete: (l: string) => `completeWork(${l}): prepare DOM changes, bubble effects up to parent`,
+    commit1: 'COMMIT (synchronous, not interruptible): apply DOM mutations',
+    commit2: 'Run layout effects, then schedule passive effects (useEffect)',
+    done: 'Browser paints. Done.',
+    yield: 'Time slice (~5ms) used up: shouldYield() → true. Return control to the browser.',
+    urgent1: 'User clicks! A SyncLane update arrives: higher priority than the transition.',
+    urgent2: 'React renders and commits the urgent update first (fast, small).',
+    restart: 'The half-built transition tree is stale; React throws it away and restarts from the root.',
+    interrupt: 'Interrupt with an urgent update', commitPhase: 'Commit phase', urgentWork: 'Urgent work', renderPhase: 'Render phase (interruptible)',
+    aria: 'Fiber tree work loop', lgBegin: 'beginWork (going down)', lgComplete: 'completeWork (going up)', lgCommitted: 'committed to DOM',
+  },
+  id: {
+    begin: (l: string) => `beginWork(${l}): panggil component / diff child-nya`,
+    complete: (l: string) => `completeWork(${l}): siapkan perubahan DOM, naikkan effect ke parent`,
+    commit1: 'COMMIT (sinkron, tidak bisa diinterupsi): terapkan mutasi DOM',
+    commit2: 'Jalankan layout effect, lalu jadwalkan passive effect (useEffect)',
+    done: 'Browser melakukan paint. Selesai.',
+    yield: 'Jatah waktu (~5ms) habis: shouldYield() → true. Kendali dikembalikan ke browser.',
+    urgent1: 'Pengguna mengklik! Update SyncLane datang: prioritasnya lebih tinggi dari transition.',
+    urgent2: 'React me-render dan meng-commit update mendesak itu lebih dulu (cepat, kecil).',
+    restart: 'Pohon transition yang baru setengah jadi sudah basi; React membuangnya dan mulai lagi dari root.',
+    interrupt: 'Interupsi dengan update mendesak', commitPhase: 'Fase commit', urgentWork: 'Pekerjaan mendesak', renderPhase: 'Fase render (bisa diinterupsi)',
+    aria: 'Work loop pada pohon Fiber', lgBegin: 'beginWork (turun)', lgComplete: 'completeWork (naik)', lgCommitted: 'sudah di-commit ke DOM',
+  },
+} as const
 
 type F = { id: string; label: string; x: number; y: number; parent?: string }
 const FIBERS: F[] = [
@@ -18,32 +48,34 @@ const kids = (id: string) => FIBERS.filter(f => f.parent === id)
 
 type Step = { phase: 'begin' | 'complete' | 'commit' | 'yield' | 'urgent' | 'restart' | 'done'; id?: string; text: string; lane: string }
 
-function workLoop(lane: string): Step[] {
+function workLoop(lane: string, lang: Lang): Step[] {
+  const t = T[lang]
   const out: Step[] = []
   const walk = (f: F) => {
-    out.push({ phase: 'begin', id: f.id, text: `beginWork(${f.label}): call the component / diff its children`, lane })
+    out.push({ phase: 'begin', id: f.id, text: t.begin(f.label), lane })
     for (const c of kids(f.id)) walk(c)
-    out.push({ phase: 'complete', id: f.id, text: `completeWork(${f.label}): prepare DOM changes, bubble effects up to parent`, lane })
+    out.push({ phase: 'complete', id: f.id, text: t.complete(f.label), lane })
   }
   walk(FIBERS[0]!)
   return out
 }
 
-function buildSteps(interrupt: boolean): Step[] {
-  const render = workLoop('TransitionLane')
+function buildSteps(interrupt: boolean, lang: Lang): Step[] {
+  const t = T[lang]
+  const render = workLoop('TransitionLane', lang)
   const commit: Step[] = [
-    { phase: 'commit', text: 'COMMIT (synchronous, not interruptible): apply DOM mutations', lane: 'TransitionLane' },
-    { phase: 'commit', text: 'Run layout effects, then schedule passive effects (useEffect)', lane: 'TransitionLane' },
-    { phase: 'done', text: 'Browser paints. Done.', lane: '—' },
+    { phase: 'commit', text: t.commit1, lane: 'TransitionLane' },
+    { phase: 'commit', text: t.commit2, lane: 'TransitionLane' },
+    { phase: 'done', text: t.done, lane: '—' },
   ]
   if (!interrupt) return [...render, ...commit]
   const cut = 9
   return [
     ...render.slice(0, cut),
-    { phase: 'yield', text: 'Time slice (~5ms) used up: shouldYield() → true. Return control to the browser.', lane: 'TransitionLane' },
-    { phase: 'urgent', text: 'User clicks! A SyncLane update arrives: higher priority than the transition.', lane: 'SyncLane' },
-    { phase: 'urgent', text: 'React renders and commits the urgent update first (fast, small).', lane: 'SyncLane' },
-    { phase: 'restart', text: 'The half-built transition tree is stale; React throws it away and restarts from the root.', lane: 'TransitionLane' },
+    { phase: 'yield', text: t.yield, lane: 'TransitionLane' },
+    { phase: 'urgent', text: t.urgent1, lane: 'SyncLane' },
+    { phase: 'urgent', text: t.urgent2, lane: 'SyncLane' },
+    { phase: 'restart', text: t.restart, lane: 'TransitionLane' },
     ...render,
     ...commit,
   ]
@@ -51,7 +83,9 @@ function buildSteps(interrupt: boolean): Step[] {
 
 export default function Fiber() {
   const [interrupt, setInterrupt] = useState(false)
-  const steps = useMemo(() => buildSteps(interrupt), [interrupt])
+  const lang = useLang()
+  const t = T[lang]
+  const steps = useMemo(() => buildSteps(interrupt, lang), [interrupt, lang])
   const s = useStepper(steps.length, 700)
   const st = steps[s.i]!
 
@@ -80,18 +114,18 @@ export default function Fiber() {
               s.reset()
             }}
           >
-            Interrupt with an urgent update
+            {t.interrupt}
           </Toggle>
         }
       />
       <div className="viz-stage">
         <div className="row" style={{ marginBottom: 8 }}>
           <span className={`pill ${st.phase === 'commit' || st.phase === 'done' ? 'ok' : st.phase === 'urgent' ? 'warn' : 'accent'}`}>
-            {st.phase === 'commit' || st.phase === 'done' ? 'Commit phase' : st.phase === 'urgent' ? 'Urgent work' : 'Render phase (interruptible)'}
+            {st.phase === 'commit' || st.phase === 'done' ? t.commitPhase : st.phase === 'urgent' ? t.urgentWork : t.renderPhase}
           </span>
           <span className="pill violet">lane: {st.lane}</span>
         </div>
-        <svg viewBox="0 0 580 330" width="100%" role="img" aria-label="Fiber tree work loop">
+        <svg viewBox="0 0 580 330" width="100%" role="img" aria-label={t.aria}>
           {FIBERS.filter(f => f.parent).map(f => {
             const p = FIBERS.find(x => x.id === f.parent)!
             return <line key={f.id} x1={p.x} y1={p.y + 15} x2={f.x} y2={f.y - 15} stroke="var(--border)" strokeWidth={2} />
@@ -111,9 +145,9 @@ export default function Fiber() {
           ))}
         </svg>
         <div className="viz-legend">
-          <span style={{ ['--c' as string]: 'var(--accent)' }}>beginWork (going down)</span>
-          <span style={{ ['--c' as string]: 'var(--violet)' }}>completeWork (going up)</span>
-          <span style={{ ['--c' as string]: 'var(--ok)' }}>committed to DOM</span>
+          <span style={{ ['--c' as string]: 'var(--accent)' }}>{t.lgBegin}</span>
+          <span style={{ ['--c' as string]: 'var(--violet)' }}>{t.lgComplete}</span>
+          <span style={{ ['--c' as string]: 'var(--ok)' }}>{t.lgCommitted}</span>
         </div>
       </div>
       <Note>{st.text}</Note>

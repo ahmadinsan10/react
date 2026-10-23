@@ -1,11 +1,66 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigationType } from 'react-router'
-import { LEVELS } from '../data/levels'
 import { dueCards, isComplete, levelStats } from '../store/logic'
 import { useProgress } from '../store/progress'
 import { CommandPalette } from './CommandPalette'
 import { SyncBadge } from './SyncPanel'
 import { Icon, Logo, Toaster } from './ui'
+import { defineStrings, LANGS, setLang, useLang, useLevels, useStrings } from '../i18n'
+
+const S = defineStrings({
+  en: {
+    skip: 'Skip to content',
+    nav: 'Main navigation',
+    dashboard: 'Dashboard',
+    roadmap: 'Roadmap',
+    lab: 'Visualization Lab',
+    review: 'Review',
+    exam: 'Exam mode',
+    checklist: 'Expert checklist',
+    levels: 'Levels',
+    settings: 'Settings & sync',
+    collapse: 'Collapse',
+    collapseSidebar: 'Collapse sidebar',
+    expandSidebar: 'Expand sidebar',
+    openNav: 'Open navigation',
+    closeNav: 'Close navigation',
+    openMenu: 'Open full menu',
+    search: 'Search lessons, demos, questions…',
+    toLight: 'Switch to light theme',
+    toDark: 'Switch to dark theme',
+    quickNav: 'Quick navigation',
+    home: 'Home',
+    labShort: 'Lab',
+    cardsDue: '{n} cards due',
+    language: 'Language',
+  },
+  id: {
+    skip: 'Langsung ke konten',
+    nav: 'Navigasi utama',
+    dashboard: 'Dashboard',
+    roadmap: 'Roadmap',
+    lab: 'Lab Visualisasi',
+    review: 'Ulang Materi',
+    exam: 'Mode Ujian',
+    checklist: 'Checklist Ahli',
+    levels: 'Level',
+    settings: 'Pengaturan & sinkronisasi',
+    collapse: 'Ciutkan',
+    collapseSidebar: 'Ciutkan sidebar',
+    expandSidebar: 'Lebarkan sidebar',
+    openNav: 'Buka navigasi',
+    closeNav: 'Tutup navigasi',
+    openMenu: 'Buka menu lengkap',
+    search: 'Cari materi, demo, soal…',
+    toLight: 'Ganti ke tema terang',
+    toDark: 'Ganti ke tema gelap',
+    quickNav: 'Navigasi cepat',
+    home: 'Beranda',
+    labShort: 'Lab',
+    cardsDue: '{n} kartu perlu diulang',
+    language: 'Bahasa',
+  },
+})
 
 type Theme = 'system' | 'light' | 'dark'
 
@@ -41,6 +96,9 @@ function useTheme() {
 
 export function Layout() {
   const progress = useProgress()
+  const s = useStrings(S)
+  const lang = useLang()
+  const LEVELS = useLevels()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
   const [sidebar, setSidebar] = useStoredState('rm-sidebar', 'open', ['open', 'collapsed'])
@@ -138,14 +196,14 @@ export function Layout() {
   return (
     <div className={`shell${collapsed ? ' collapsed' : ''}`}>
       <a href="#main" className="sr-only">
-        Skip to content
+        {s('skip')}
       </a>
       {navOpen && <div className="scrim" onClick={() => setNavOpen(false)} />}
       <aside
         ref={sidebarRef}
         id="main-nav"
         className={`sidebar${navOpen ? ' open' : ''}`}
-        aria-label="Main navigation"
+        aria-label={s('nav')}
         // A closed drawer is only slid off-screen: make it unreachable by Tab and screen readers.
         inert={isDrawer && !navOpen}
         {...(isDrawer && navOpen ? { role: 'dialog', 'aria-modal': true } : {})}
@@ -154,30 +212,30 @@ export function Layout() {
           <Link to="/" className="brand" title="React Mastery">
             <Logo /> <span className="brand-text">React Mastery</span>
           </Link>
-          <button className="btn ghost icon-btn drawer-close" onClick={() => setNavOpen(false)} aria-label="Close navigation">
+          <button className="btn ghost icon-btn drawer-close" onClick={() => setNavOpen(false)} aria-label={s('closeNav')}>
             <Icon name="close" />
           </button>
         </div>
-        <NavLink to="/" end className="nav-link" title="Dashboard">
-          <Icon name="home" /> <span className="label">Dashboard</span>
+        <NavLink to="/" end className="nav-link" title={s('dashboard')}>
+          <Icon name="home" /> <span className="label">{s('dashboard')}</span>
         </NavLink>
-        <NavLink to="/roadmap" className="nav-link" title="Roadmap">
-          <Icon name="map" /> <span className="label">Roadmap</span>
+        <NavLink to="/roadmap" className="nav-link" title={s('roadmap')}>
+          <Icon name="map" /> <span className="label">{s('roadmap')}</span>
         </NavLink>
-        <NavLink to="/lab" className="nav-link" title="Visualization Lab">
-          <Icon name="flask" /> <span className="label">Visualization Lab</span>
+        <NavLink to="/lab" className="nav-link" title={s('lab')}>
+          <Icon name="flask" /> <span className="label">{s('lab')}</span>
         </NavLink>
-        <NavLink to="/review" className="nav-link" title="Review">
-          <Icon name="brain" /> <span className="label">Review</span>
-          {due > 0 && <span className="badge" aria-label={`${due} cards due`}>{due}</span>}
+        <NavLink to="/review" className="nav-link" title={s('review')}>
+          <Icon name="brain" /> <span className="label">{s('review')}</span>
+          {due > 0 && <span className="badge" aria-label={s('cardsDue', { n: due })}>{due}</span>}
         </NavLink>
-        <NavLink to="/exam" className="nav-link" title="Exam mode">
-          <Icon name="target" /> <span className="label">Exam mode</span>
+        <NavLink to="/exam" className="nav-link" title={s('exam')}>
+          <Icon name="target" /> <span className="label">{s('exam')}</span>
         </NavLink>
-        <NavLink to="/checklist" className="nav-link" title="Expert checklist">
-          <Icon name="list" /> <span className="label">Expert checklist</span>
+        <NavLink to="/checklist" className="nav-link" title={s('checklist')}>
+          <Icon name="list" /> <span className="label">{s('checklist')}</span>
         </NavLink>
-        <div className="nav-section">Levels</div>
+        <div className="nav-section">{s('levels')}</div>
         {LEVELS.map(l => {
           const s = levelStats(progress, l)
           const done = isComplete(s.ratio)
@@ -192,32 +250,39 @@ export function Layout() {
           )
         })}
         <div className="spacer" />
-        <NavLink to="/settings" className="nav-link" title="Settings & sync">
-          <Icon name="settings" /> <span className="label">Settings & sync</span>
+        <NavLink to="/settings" className="nav-link" title={s('settings')}>
+          <Icon name="settings" /> <span className="label">{s('settings')}</span>
         </NavLink>
         <button
           className="nav-link collapse-btn"
           onClick={() => setSidebar(collapsed ? 'open' : 'collapsed')}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? s('expandSidebar') : s('collapseSidebar')}
+          title={collapsed ? s('expandSidebar') : s('collapseSidebar')}
         >
           <span style={{ display: 'inline-flex', transform: collapsed ? 'none' : 'rotate(180deg)' }}>
             <Icon name="chevron" />
           </span>
-          <span className="label">Collapse</span>
+          <span className="label">{s('collapse')}</span>
         </button>
       </aside>
       <div className="main">
         <header className="topbar">
-          <button className="btn ghost icon-btn menu-btn" onClick={openNav} aria-label="Open navigation" aria-expanded={navOpen} aria-controls="main-nav">
+          <button className="btn ghost icon-btn menu-btn" onClick={openNav} aria-label={s('openNav')} aria-expanded={navOpen} aria-controls="main-nav">
             <Icon name="menu" />
           </button>
           <button className="search-btn" onClick={() => setPaletteOpen(true)}>
-            <Icon name="search" size={16} /> <span className="search-text">Search lessons, demos, questions…</span> <kbd>Ctrl K</kbd>
+            <Icon name="search" size={16} /> <span className="search-text">{s('search')}</span> <kbd>Ctrl K</kbd>
           </button>
           <span className="spacer" />
           <SyncBadge />
-          <button className="btn ghost icon-btn" onClick={() => setTheme(isDark ? 'light' : 'dark')} aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}>
+          <div className="lang-switch" role="radiogroup" aria-label={s('language')}>
+            {LANGS.map(l => (
+              <button key={l.value} role="radio" aria-checked={lang === l.value} title={l.label} onClick={() => setLang(l.value)}>
+                {l.short}
+              </button>
+            ))}
+          </div>
+          <button className="btn ghost icon-btn" onClick={() => setTheme(isDark ? 'light' : 'dark')} aria-label={isDark ? s('toLight') : s('toDark')}>
             <Icon name={isDark ? 'sun' : 'moon'} />
           </button>
         </header>
@@ -225,22 +290,22 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
-      <nav className="bottom-nav" aria-label="Quick navigation">
+      <nav className="bottom-nav" aria-label={s('quickNav')}>
         <NavLink to="/" end>
-          <Icon name="home" /> Home
+          <Icon name="home" /> {s('home')}
         </NavLink>
         <NavLink to="/roadmap">
-          <Icon name="map" /> Roadmap
+          <Icon name="map" /> {s('roadmap')}
         </NavLink>
         <NavLink to="/lab">
-          <Icon name="flask" /> Lab
+          <Icon name="flask" /> {s('labShort')}
         </NavLink>
         <NavLink to="/review">
-          <Icon name="brain" /> Review
+          <Icon name="brain" /> {s('review')}
           {due > 0 && <span className="badge">{due}</span>}
         </NavLink>
-        <button onClick={openNav} aria-label="Open full menu" aria-expanded={navOpen} aria-controls="main-nav">
-          <Icon name="menu" /> Levels
+        <button onClick={openNav} aria-label={s('openMenu')} aria-expanded={navOpen} aria-controls="main-nav">
+          <Icon name="menu" /> {s('levels')}
         </button>
       </nav>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

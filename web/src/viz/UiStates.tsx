@@ -1,5 +1,19 @@
 import { useState } from 'react'
 import { Note } from './common'
+import { useLang } from '../i18n/lang'
+
+const T = {
+  en: {
+    three: 'Three booleans → 8 combinations', valid: 'valid?', impossible: '✗ impossible', nonsense: '4 of 8 combinations are nonsense, yet the type allows them, so your UI has to defend against them.',
+    union: 'Discriminated union → only real states', aria: (s: string) => `State machine, current state ${s}`, idle: 'Search for a city to begin.', loading: 'Loading…', error: 'Error:',
+    note: 'With a union, `error` only exists when `status === \'error\'` and `data` only when `status === \'success\'`. TypeScript narrows automatically inside each branch, and invalid transitions (like RESOLVE while idle) are simply unavailable. That is "making impossible states unrepresentable".',
+  },
+  id: {
+    three: 'Tiga boolean → 8 kombinasi', valid: 'valid?', impossible: '✗ mustahil', nonsense: '4 dari 8 kombinasi tidak masuk akal, tapi tipenya tetap mengizinkan, jadi UI kamu harus berjaga-jaga terhadap kombinasi itu.',
+    union: 'Discriminated union → hanya state yang nyata', aria: (s: string) => `State machine, state saat ini ${s}`, idle: 'Cari sebuah kota untuk memulai.', loading: 'Memuat…', error: 'Error:',
+    note: 'Dengan union, `error` hanya ada saat `status === \'error\'` dan `data` hanya ada saat `status === \'success\'`. TypeScript otomatis melakukan narrowing di setiap cabang, dan transisi yang tidak valid (misalnya RESOLVE saat idle) memang tidak tersedia. Inilah yang disebut "membuat state mustahil tidak bisa direpresentasikan".',
+  },
+} as const
 
 type State = { status: 'idle' } | { status: 'loading' } | { status: 'error'; error: string } | { status: 'success'; data: string[] }
 type Event = 'FETCH' | 'RESOLVE' | 'REJECT' | 'RETRY' | 'RESET'
@@ -24,6 +38,7 @@ const EDGES: [State['status'], State['status'], Event][] = [
 ]
 
 export default function UiStates() {
+  const tr = T[useLang()]
   const [s, setS] = useState<State>({ status: 'idle' })
   const send = (e: Event) => {
     const t = transitions[s.status][e]
@@ -36,7 +51,7 @@ export default function UiStates() {
     <div>
       <div className="grid cols-2">
         <div className="viz-stage">
-          <h4 style={{ marginTop: 0 }}>Three booleans → 8 combinations</h4>
+          <h4 style={{ marginTop: 0 }}>{tr.three}</h4>
           <pre style={{ fontSize: '0.75rem' }}>
             <code>{'{ isLoading: boolean; isError: boolean; data?: City[] }'}</code>
           </pre>
@@ -46,7 +61,7 @@ export default function UiStates() {
                 <th>loading</th>
                 <th>error</th>
                 <th>data</th>
-                <th>valid?</th>
+                <th>{tr.valid}</th>
               </tr>
             </thead>
             <tbody>
@@ -55,16 +70,16 @@ export default function UiStates() {
                   <td>{String(c.loading)}</td>
                   <td>{String(c.error)}</td>
                   <td>{c.data ? '[…]' : '—'}</td>
-                  <td>{valid(c) ? '✓' : '✗ impossible'}</td>
+                  <td>{valid(c) ? '✓' : tr.impossible}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="subtle">4 of 8 combinations are nonsense, yet the type allows them, so your UI has to defend against them.</p>
+          <p className="subtle">{tr.nonsense}</p>
         </div>
         <div className="viz-stage">
-          <h4 style={{ marginTop: 0 }}>Discriminated union → only real states</h4>
-          <svg viewBox="0 0 520 190" width="100%" role="img" aria-label={`State machine, current state ${s.status}`}>
+          <h4 style={{ marginTop: 0 }}>{tr.union}</h4>
+          <svg viewBox="0 0 520 190" width="100%" role="img" aria-label={tr.aria(s.status)}>
             <defs>
               <marker id="ui-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
                 <path d="M0 0 10 5 0 10z" fill="var(--text-3)" />
@@ -106,16 +121,14 @@ export default function UiStates() {
             <code>{JSON.stringify(s)}</code>
           </pre>
           <div style={{ minHeight: 40 }}>
-            {s.status === 'idle' && <span className="subtle">Search for a city to begin.</span>}
-            {s.status === 'loading' && <span className="pill warn">Loading…</span>}
-            {s.status === 'error' && <span className="pill" style={{ background: 'var(--bad-soft)', color: 'var(--bad)' }}>Error: {s.error}</span>}
+            {s.status === 'idle' && <span className="subtle">{tr.idle}</span>}
+            {s.status === 'loading' && <span className="pill warn">{tr.loading}</span>}
+            {s.status === 'error' && <span className="pill" style={{ background: 'var(--bad-soft)', color: 'var(--bad)' }}>{tr.error} {s.error}</span>}
             {s.status === 'success' && s.data.map(d => <span key={d} className="chip o" style={{ display: 'inline-block', marginRight: 6 }}>{d}</span>)}
           </div>
         </div>
       </div>
-      <Note>
-        With a union, `error` only exists when `status === 'error'` and `data` only when `status === 'success'`. TypeScript narrows automatically inside each branch, and invalid transitions (like RESOLVE while idle) are simply unavailable. That is "making impossible states unrepresentable".
-      </Note>
+      <Note>{tr.note}</Note>
     </div>
   )
 }
