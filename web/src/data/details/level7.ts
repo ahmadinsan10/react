@@ -119,6 +119,12 @@ Prefer mocking at system boundaries (network with MSW, time, randomness) rather 
 - **Type testing** with \`expectTypeOf\` for library authors.
 - **Projects** (workspaces) to run node and browser environments in one command.
 
+### Vitest 5 changes to know
+- Requires Node 22.12+ and Vite 6.4+.
+- **Mocks are cleared before each test by default**, so call history never leaks between tests (set return values inside each test or \`beforeEach\`).
+- **Un-awaited async assertions now fail** (e.g. a forgotten \`await expect(p).resolves...\`), and \`expect.poll\` fails at its timeout.
+- Config files are no longer searched in parent folders.
+
 ### Common performance tips
 Avoid huge barrel imports in tests, keep \`setupFiles\` light, and prefer \`happy-dom\` if your tests do not rely on jsdom-specific behaviour. Use \`--reporter=verbose\` or \`--ui\` to see what is slow.`,
     examples: [
@@ -198,10 +204,10 @@ import { afterAll, afterEach, beforeAll } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { server } from './server'
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => { cleanup(); server.resetHandlers() })
 afterAll(() => server.close())`,
-        note: 'onUnhandledRequest "error" makes any un-mocked network call fail loudly instead of silently hanging.',
+        note: 'onUnhandledFrame "error" (called onUnhandledRequest before MSW 3) makes any un-mocked network call fail loudly instead of silently hanging.',
       },
     ],
     realCase: {
@@ -404,11 +410,13 @@ test('tabs follow the APG keyboard pattern', async () => {
 - **In Node** (Vitest, Jest), \`setupServer\` from \`msw/node\` patches the request-making modules (\`http\`, \`https\`, global \`fetch\`) at a low level to achieve the same interception.
 The same handler definitions work in both, so one set of mocks serves tests, stories and offline development.
 
-### The v2 API
-Handlers are built with \`http.get\`, \`http.post\`, etc. (or \`graphql.query\`). The resolver receives \`{ request, params, cookies }\` and returns a standard Fetch API \`Response\`, usually via the \`HttpResponse\` helper: \`HttpResponse.json(data, { status })\`, \`HttpResponse.text()\`, \`HttpResponse.error()\` for network failures. Use \`delay()\` to simulate latency. Reading the body uses the standard \`await request.json()\`.
+### The current API (v2 and v3)
+Handlers are built with \`http.get\`, \`http.post\`, etc. (or \`graphql.query\`). The resolver receives \`{ request, params, cookies }\` and returns a standard Fetch API \`Response\`, usually via the \`HttpResponse\` helper: \`HttpResponse.json(data, { status })\`, \`HttpResponse.text()\`, \`HttpResponse.error()\` for network failures. Use \`delay()\` (from \`msw/utils\` in MSW 3) to simulate latency. Reading the body uses the standard \`await request.json()\`.
+
+**MSW 3** keeps \`http\`, \`HttpResponse\` and \`setupServer\` unchanged, but is ESM-only and needs Node 22+; \`onUnhandledRequest\` was renamed \`onUnhandledFrame\`, \`graphql\` moved to \`msw/graphql\`, helpers like \`delay\` and \`passthrough\` live in \`msw/utils\`, and \`worker.stop()\` returns a Promise.
 
 ### Test lifecycle
-1. \`server.listen({ onUnhandledRequest: 'error' })\` before all tests, so any request without a handler fails the test loudly.
+1. \`server.listen({ onUnhandledFrame: 'error' })\` before all tests, so any request without a handler fails the test loudly.
 2. \`server.use(...)\` inside a specific test to **override** a handler for that scenario (empty list, 500, slow response).
 3. \`server.resetHandlers()\` after each test removes those overrides.
 4. \`server.close()\` after all.
@@ -429,7 +437,8 @@ Mocks drift from the real API. Mitigations: generate types (or the handlers them
       {
         title: '✅ Shared handlers and a Node server',
         code: `// src/mocks/handlers.ts
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse } from 'msw'
+import { delay } from 'msw/utils'
 
 export const products = [
   { id: 'p1', name: 'Blue T-shirt', price: 20 },
@@ -502,14 +511,14 @@ test('shows an error and recovers on retry', async () => {
 
 **Root cause:** The hook started sending \`?state=shipped\` instead of \`?status=shipped\`. The mocked hook never built a URL, so tests could not notice.
 
-**Fix:** The team switched to MSW handlers that filter by the \`status\` parameter like the real API, removed hook mocks, and set \`onUnhandledRequest: 'error'\`. The regression test now fails if the wrong parameter is sent because the list would not be filtered.
+**Fix:** The team switched to MSW handlers that filter by the \`status\` parameter like the real API, removed hook mocks, and set \`onUnhandledFrame: 'error'\`. The regression test now fails if the wrong parameter is sent because the list would not be filtered.
 
 **Lesson:** Mock at the network boundary so the code that builds requests is under test.`,
     },
     pitfalls: [
       'Forgetting server.resetHandlers() after each test, so an error override leaks into later tests.',
-      'Leaving onUnhandledRequest at the default warning, so un-mocked requests silently hang or hit the network.',
-      'Using MSW v1 syntax (rest.get, res(ctx.json())) with v2; the API changed to http and HttpResponse.',
+      'Leaving onUnhandledFrame (onUnhandledRequest before MSW 3) at the default warning, so un-mocked requests silently hang or hit the network.',
+      'Using MSW v1 syntax (rest.get, res(ctx.json())) with v2/v3; the API changed to http and HttpResponse.',
       'Mock payloads drifting from the real API shape; validate with shared schemas or generate from OpenAPI.',
     ],
     exercise: {

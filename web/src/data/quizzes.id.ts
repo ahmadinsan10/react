@@ -460,7 +460,7 @@ export const QUESTIONS_ID: QuestionsId = {
       'Statis saat build',
       'Direvalidasi setiap 60 detik',
     ],
-    explanation: 'Caching bersifat eksplisit: tandai fungsi/komponen dengan "use cache" dan kendalikan dengan cacheLife dan cacheTag.',
+    explanation: 'Caching bersifat eksplisit: tandai fungsi/komponen dengan "use cache" dan kendalikan dengan cacheLife dan cacheTag. Sejak Next.js 16.4, Cache Components aktif secara default di project create-next-app baru.',
   },
   'L10-Q5': {
     prompt: 'Setelah mutation, bagaimana cara me-refresh data cache yang diberi tag "posts"?',
@@ -470,7 +470,7 @@ export const QUESTIONS_ID: QuestionsId = {
   'L10-Q6': {
     prompt: 'Di Next.js 16, `middleware.ts` berganti nama menjadi apa?',
     options: ['edge.ts', 'proxy.ts', 'server.ts', 'handler.ts'],
-    explanation: 'Sekarang namanya `proxy.ts`; kamu masih akan menemukan nama lamanya di tutorial dan proyek yang lebih lama.',
+    explanation: 'Sekarang namanya `proxy.ts` (default-nya runtime Node.js sejak 16.4); `middleware.ts` sudah deprecated, tapi kamu masih akan menemukannya di tutorial dan proyek yang lebih lama.',
   },
   // Level 11
   'L11-Q1': {

@@ -796,7 +796,7 @@ Sekarang men-toggle satu kontak hanya me-render ulang baris itu, karena \`map\` 
   },
 
   'react19-hooks': {
-    explanation: `React 19 menambahkan API yang menjadikan UI async, terutama form dan mutasi, sebagai warga kelas satu. Semuanya berpusat pada **Action**: fungsi async yang dijalankan di dalam transition, dengan React melacak pending state, error, dan hasilnya.
+    explanation: `React 19 (19.0 sampai 19.3, versi terbaru di akhir 2026) menambahkan API yang menjadikan UI async, terutama form dan mutasi, sebagai warga kelas satu. Semuanya berpusat pada **Action**: fungsi async yang dijalankan di dalam transition, dengan React melacak pending state, error, dan hasilnya.
 
 ### Action dan transition
 
@@ -824,10 +824,18 @@ Selama sebuah Action berjalan, kamu memanggil \`addOptimistic(...)\` untuk langs
 
 ### Perubahan React 19 lain yang terkait
 
-- \`ref\` sebagai prop; ref callback bisa mengembalikan cleanup.
-- \`<Context value>\` sebagai provider.
+- \`ref\` sekarang prop biasa untuk function component, jadi kode baru tidak perlu \`forwardRef\` lagi; ref callback bisa mengembalikan cleanup.
+- Render \`<Context value>\` langsung sebagai provider; \`<Context.Provider>\` tidak diperlukan lagi.
 - Metadata dokumen (\`title\`, \`meta\`, \`link\`) yang di-render di mana pun akan diangkat ke \`head\`.
-- \`useEffectEvent\` dan \`Activity\` hadir di 19.2.
+- \`useTransition\` dan \`useDeferredValue\` menjaga input yang mendesak tetap responsif sementara update yang lebih lambat di-render di belakang layar. Sejak 19.3, tiap Transition di-render secara independen, jadi Transition yang lambat tidak lagi menahan Transition lain yang tidak berkaitan.
+- 19.2 menambahkan \`<Activity>\` (menyembunyikan subtree sambil mempertahankan state-nya) dan \`useEffectEvent\` (membaca props terbaru di dalam effect tanpa menjadikannya dependency).
+
+### Baru di React 19.3 (September 2026)
+
+- **\`<ViewTransition>\`** dari \`react\` sudah stabil. Komponen ini menganimasikan perubahan enter, exit, update, dan shared element memakai View Transitions milik browser, tapi **hanya untuk update di dalam Transition** (\`startTransition\`, reveal \`<Suspense>\`, atau \`useDeferredValue\`). Default-nya cross-fade; kamu bisa mengaturnya dengan View Transition Class di \`enter\`, \`exit\`, \`update\`, \`share\`, atau \`default\` (misalnya \`default="none"\`) plus CSS, atau dengan \`onEnter\`/\`onExit\`/\`onUpdate\`/\`onShare\`. Enter/exit hanya teranimasi kalau \`<ViewTransition>\` muncul sebelum node DOM mana pun di subtree-nya, dan \`name\` untuk shared element harus unik. Membungkus \`<Suspense>\` akan menganimasikan peralihan fallback → konten.
+- **\`addTransitionType(type)\`**, dipanggil di dalam \`startTransition\`, memberi label pada transition sehingga \`enter\`/\`exit\` bisa menerima map seperti \`{ next: 'from-right', previous: 'from-left' }\`; CSS bisa mencocokkannya lewat \`:active-view-transition-type(...)\`.
+- **Fragment ref**: \`<Fragment ref={ref}>\` memberimu \`FragmentInstance\` yang bisa memasang event listener, \`focus\`/\`focusLast\`/\`blur\`, \`observeUsing\` dengan IntersectionObserver atau ResizeObserver, \`getClientRects\`, dan \`scrollIntoView\` untuk semua children-nya, tanpa \`div\` pembungkus.
+- **\`use(browser())\`** dengan \`browser\` dari \`react-dom\` mengeluarkan komponen dari server rendering: di server ia suspend sehingga fallback Suspense terdekat yang masuk ke HTML; di client ia di-render seperti biasa. Boleh dipanggil secara kondisional.
 
 ### Model mental
 
@@ -910,6 +918,40 @@ function Profile({ userPromise }: { userPromise: Promise<User> }) {
 </Suspense>`,
         note: '`use` membaca promise; ia tidak menyimpan cache-nya. Promise-nya harus mempertahankan identitas di antara render, jadi harus berasal dari cache atau parent.',
       },
+      {
+        title: 'Slide berarah dengan ViewTransition (React 19.3)',
+        code: `import { ViewTransition, addTransitionType, startTransition, useState } from 'react'
+
+function Gallery({ photos }: { photos: Photo[] }) {
+  const [index, setIndex] = useState(0)
+  const photo = photos[index]
+
+  function go(delta: 1 | -1) {
+    startTransition(() => {
+      addTransitionType(delta === 1 ? 'next' : 'previous')
+      setIndex(i => (i + delta + photos.length) % photos.length)
+    })
+  }
+
+  return (
+    <>
+      <ViewTransition
+        key={photo.id}
+        enter={{ next: 'from-right', previous: 'from-left' }}
+        exit={{ next: 'to-left', previous: 'to-right' }}
+      >
+        <img src={photo.src} alt={photo.alt} />
+      </ViewTransition>
+      <button onClick={() => go(-1)}>Previous</button>
+      <button onClick={() => go(1)}>Next</button>
+    </>
+  )
+}
+
+/* CSS: style the classes, e.g.
+::view-transition-new(.from-right) { animation: slide-in-from-right 250ms; } */`,
+        note: 'Update-nya dibungkus `startTransition`, jadi teranimasi. `addTransitionType` menentukan class mana dari map `enter`/`exit` yang dipakai; mengganti `key` membuat gambar lama exit dan gambar baru enter.',
+      },
     ],
     realCase: {
       title: 'Membuang 200 baris boilerplate form',
@@ -923,6 +965,7 @@ Saat upgrade ke React 19, tim mengubah setiap form menjadi \`useActionState\` de
       'Lupa bahwa action milik `useActionState` menerima `prevState` sebagai argumen pertama.',
       'Tidak membungkus komponen yang memanggil `use(promise)` dengan Suspense dan error boundary.',
       'Berharap state `useOptimistic` bertahan; ia kembali ke nilai asli begitu Action selesai.',
+      'Berharap `<ViewTransition>` menganimasikan `setState` biasa; hanya update di dalam Transition yang teranimasi.',
     ],
     exercise: {
       task: 'Buat tombol "Like" untuk sebuah post memakai `useOptimistic` dan sebuah Action. Tombol harus ter-update seketika, menampilkan jumlah sebenarnya setelah server merespons, dan kembali seperti semula kalau request gagal (simulasikan kegagalan secara acak di API palsu).',
@@ -955,6 +998,7 @@ Kalau \`api.like\` melempar error, \`likes\` tidak pernah berubah, jadi saat tra
       'Apa itu Action di React 19, dan bagaimana `useActionState` dan `<form action>` memakainya?',
       'Bagaimana `useOptimistic` memutuskan kapan membuang nilai optimistic?',
       'Kenapa promise yang dikirim ke `use` harus stabil, dan dari mana seharusnya promise itu berasal?',
+      'Apa saja yang distabilkan React 19.3 (`<ViewTransition>`, Fragment ref, `browser()`), dan masalah apa yang diselesaikan masing-masing?',
     ],
   },
 

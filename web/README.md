@@ -22,7 +22,15 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # Vitest unit tests (progress logic, content integrity, markdown renderer)
 npm run build      # type-check + production build into dist/
+npm run compiler:report   # which components the React Compiler optimized or skipped, and why
 ```
+
+### Toolchain (October 2026)
+
+React 19.3 · React Router 8 · TypeScript 7 (native compiler) · Vite 8 (Rolldown) · Vitest 5, all at their latest releases.
+
+- **React Compiler** is enabled the current way for `@vitejs/plugin-react` 6: `babel({ presets: [reactCompilerPreset()] })` with `@rolldown/plugin-babel` (the old `react({ babel: … })` option was removed in v6). Components the compiler skips still work; `npm run compiler:report` lists them. Several skips are deliberate: some demos break the rules of React on purpose (reading refs during render, mutating module state) to show what happens.
+- **ESLint is not set up yet**: typescript-eslint needs TypeScript's programmatic API, which TypeScript 7 doesn't have until 7.1. Add `eslint-plugin-react-hooks` (`recommended-latest`) once typescript-eslint supports TS 7.
 
 ## Deploy to Vercel
 

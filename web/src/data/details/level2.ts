@@ -796,7 +796,7 @@ Toggling one contact now re-renders only that row, because \`map\` keeps every o
   },
 
   'react19-hooks': {
-    explanation: `React 19 added APIs that make async UI, especially forms and mutations, first-class. They revolve around **Actions**: async functions run inside a transition, with React tracking their pending state, errors and results.
+    explanation: `React 19 (19.0 through 19.3, the current line in late 2026) added APIs that make async UI, especially forms and mutations, first-class. They revolve around **Actions**: async functions run inside a transition, with React tracking their pending state, errors and results.
 
 ### Actions and transitions
 
@@ -824,10 +824,18 @@ During an Action you call \`addOptimistic(...)\` to show the expected result imm
 
 ### Related React 19 changes
 
-- \`ref\` as a prop; ref callbacks can return cleanup.
-- \`<Context value>\` as a provider.
+- \`ref\` is a regular prop for function components, so new code no longer needs \`forwardRef\`; ref callbacks can return cleanup.
+- Render \`<Context value>\` directly as the provider; \`<Context.Provider>\` is no longer needed.
 - Document metadata (\`title\`, \`meta\`, \`link\`) rendered anywhere is hoisted to \`head\`.
-- \`useEffectEvent\` and \`Activity\` arrived in 19.2.
+- \`useTransition\` and \`useDeferredValue\` keep urgent input responsive while slower updates render in the background. Since 19.3, separate Transitions render independently, so a slow one no longer blocks unrelated ones.
+- 19.2 added \`<Activity>\` (hide a subtree while keeping its state) and \`useEffectEvent\` (read the latest props in an effect without making them dependencies).
+
+### New in React 19.3 (September 2026)
+
+- **\`<ViewTransition>\`** from \`react\` is stable. It animates enter, exit, update and shared-element changes using the browser's View Transitions, but **only for updates inside a Transition** (\`startTransition\`, a \`<Suspense>\` reveal, or \`useDeferredValue\`). The default is a cross-fade; customise it with View Transition Classes on \`enter\`, \`exit\`, \`update\`, \`share\` or \`default\` (for example \`default="none"\`) plus CSS, or with \`onEnter\`/\`onExit\`/\`onUpdate\`/\`onShare\`. Enter/exit only animate when the \`<ViewTransition>\` comes before any DOM node in its subtree, and shared \`name\`s must be unique. Wrapping a \`<Suspense>\` animates fallback → content.
+- **\`addTransitionType(type)\`**, called inside \`startTransition\`, labels the transition so \`enter\`/\`exit\` can take a map like \`{ next: 'from-right', previous: 'from-left' }\`; CSS can match it with \`:active-view-transition-type(...)\`.
+- **Fragment refs**: \`<Fragment ref={ref}>\` gives a \`FragmentInstance\` that can add event listeners, \`focus\`/\`focusLast\`/\`blur\`, \`observeUsing\` an IntersectionObserver or ResizeObserver, \`getClientRects\` and \`scrollIntoView\` across its children, with no wrapper \`div\`.
+- **\`use(browser())\`** with \`browser\` from \`react-dom\` opts a component out of server rendering: on the server it suspends so the nearest Suspense fallback goes into the HTML; on the client it renders normally. It may be called conditionally.
 
 ### Mental model
 
@@ -910,6 +918,40 @@ function Profile({ userPromise }: { userPromise: Promise<User> }) {
 </Suspense>`,
         note: '`use` reads a promise; it does not cache one. The promise must keep its identity across renders, so it comes from a cache or a parent.',
       },
+      {
+        title: 'Directional slide with ViewTransition (React 19.3)',
+        code: `import { ViewTransition, addTransitionType, startTransition, useState } from 'react'
+
+function Gallery({ photos }: { photos: Photo[] }) {
+  const [index, setIndex] = useState(0)
+  const photo = photos[index]
+
+  function go(delta: 1 | -1) {
+    startTransition(() => {
+      addTransitionType(delta === 1 ? 'next' : 'previous')
+      setIndex(i => (i + delta + photos.length) % photos.length)
+    })
+  }
+
+  return (
+    <>
+      <ViewTransition
+        key={photo.id}
+        enter={{ next: 'from-right', previous: 'from-left' }}
+        exit={{ next: 'to-left', previous: 'to-right' }}
+      >
+        <img src={photo.src} alt={photo.alt} />
+      </ViewTransition>
+      <button onClick={() => go(-1)}>Previous</button>
+      <button onClick={() => go(1)}>Next</button>
+    </>
+  )
+}
+
+/* CSS: style the classes, e.g.
+::view-transition-new(.from-right) { animation: slide-in-from-right 250ms; } */`,
+        note: 'The update is wrapped in `startTransition`, so it animates. `addTransitionType` picks which class from the `enter`/`exit` maps applies; changing `key` makes the old image exit and the new one enter.',
+      },
     ],
     realCase: {
       title: 'Removing 200 lines of form boilerplate',
@@ -923,6 +965,7 @@ During the React 19 upgrade the team converted each form to \`useActionState\` w
       'Forgetting that `useActionState` actions receive `prevState` as the first argument.',
       'Not wrapping components that call `use(promise)` in Suspense and an error boundary.',
       'Expecting `useOptimistic` state to persist; it reverts once the Action settles.',
+      'Expecting `<ViewTransition>` to animate a plain `setState`; only updates inside a Transition animate.',
     ],
     exercise: {
       task: 'Build a "Like" button for a post using `useOptimistic` and an Action. It should update instantly, show the real count after the server responds, and revert if the request fails (simulate failures randomly on a fake API).',
@@ -955,6 +998,7 @@ If \`api.like\` throws, \`likes\` never changes, so when the transition ends \`o
       'What is an Action in React 19, and how do `useActionState` and `<form action>` use it?',
       'How does `useOptimistic` decide when to drop the optimistic value?',
       'Why must the promise passed to `use` be stable, and where should it come from?',
+      'What did React 19.3 stabilise (`<ViewTransition>`, Fragment refs, `browser()`), and what problem does each solve?',
     ],
   },
 

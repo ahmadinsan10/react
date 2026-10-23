@@ -26,7 +26,11 @@ TypeScript compares shapes, not names. Any object with the right properties sati
 
 ### When not to type
 
-Let inference work. Annotate function parameters, public return types and exported APIs; do not annotate every local variable. Over-annotation hides better inferred types and creates maintenance noise.`,
+Let inference work. Annotate function parameters, public return types and exported APIs; do not annotate every local variable. Over-annotation hides better inferred types and creates maintenance noise.
+
+### Tooling in 2026: TypeScript 7
+
+TypeScript 7 (July 2026) is the first stable release of the native compiler rewritten in Go: full builds are roughly 8–12× faster, and you still install \`typescript\` and run the same \`tsc\` command. Two caveats: there is no stable programmatic API until 7.1, so tools that need it (Vue/Svelte/Astro/Angular template checking) still run on TypeScript 6; and JS emit only downlevels to ES2021, with no decorator emit yet. In a Vite React app this rarely matters, because Vite strips types and \`tsc\` only type-checks.`,
     examples: [
       {
         title: '❌ any vs ✅ unknown + narrowing',
@@ -554,7 +558,7 @@ function RadioGroup<T>({ name, options, value, onChange, getLabel, getKey }: Rad
   },
 
   zod: {
-    explanation: `TypeScript types are erased at compile time. When data crosses into your app from the network, \`localStorage\`, URL search params, \`postMessage\` or a form, the compiler has **no idea what it actually is**. Typing \`await res.json()\` as \`User\` is a promise you are making on behalf of a server you don't control. **Zod** lets you write the shape once as a runtime schema, check real data against it, and *infer* the static type from the same schema, so types and validation can never drift.
+    explanation: `TypeScript types are erased at compile time. When data crosses into your app from the network, \`localStorage\`, URL search params, \`postMessage\` or a form, the compiler has **no idea what it actually is**. Typing \`await res.json()\` as \`User\` is a promise you are making on behalf of a server you don't control. **Zod** lets you write the shape once as a runtime schema, check real data against it, and *infer* the static type from the same schema, so types and validation can never drift. The examples use **Zod 4**: string formats are top-level (\`z.email()\`, \`z.url()\`, \`z.uuid()\`, \`z.iso.date()\`; the old \`z.string().email()\` style is deprecated) and custom messages use \`{ error: '...' }\` instead of the deprecated \`message\`.
 
 ### Parse, don't validate
 
@@ -601,7 +605,7 @@ const InvoiceSchema = z.object({
   number: z.string(),
   amount_cents: z.number().int().nonnegative(),
   currency: z.enum(['USD', 'EUR', 'IDR']),
-  due_date: z.string().date(),
+  due_date: z.iso.date(),
   status: z.enum(['draft', 'sent', 'paid', 'void']),
 }).transform((i) => ({
   id: i.id,
@@ -651,17 +655,17 @@ export function parseFilters(params: URLSearchParams): ProductFilters {
     ],
     exercise: {
       task: 'Write a Zod schema for a sign-up form: email, password (min 12 chars, one digit), confirmPassword (must match), and an optional referral code of 8 uppercase letters/digits. Export the inferred type and a function that returns field errors as `Record<string, string>`.',
-      hint: 'Use `.refine` on the object with `path: [\'confirmPassword\']`, and `error.flatten().fieldErrors` (or iterate `error.issues`).',
+      hint: 'Use `.refine` on the object with `path: [\'confirmPassword\']`, and iterate `error.issues` to build the map.',
       solution: `\`\`\`ts
 import { z } from 'zod'
 
 export const SignUpSchema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(12, 'At least 12 characters').regex(/\\d/, 'Include a digit'),
+  email: z.email({ error: 'Enter a valid email' }),
+  password: z.string().min(12, { error: 'At least 12 characters' }).regex(/\\d/, { error: 'Include a digit' }),
   confirmPassword: z.string(),
-  referralCode: z.string().regex(/^[A-Z0-9]{8}$/, 'Invalid code').optional(),
+  referralCode: z.string().regex(/^[A-Z0-9]{8}$/, { error: 'Invalid code' }).optional(),
 }).refine((v) => v.password === v.confirmPassword, {
-  message: 'Passwords do not match',
+  error: 'Passwords do not match',
   path: ['confirmPassword'],
 })
 export type SignUp = z.infer<typeof SignUpSchema>

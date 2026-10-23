@@ -6,19 +6,19 @@ const details: Record<string, TopicDetail> = {
 
 ### Vite
 
-\`npm create vite@latest my-app -- --template react-ts\` membuatkan kerangka proyek. Selama development, Vite menyajikan source-mu sebagai ES module native, sehingga server menyala hampir seketika dan hot module replacement (HMR) hanya memperbarui module yang berubah sambil mempertahankan state komponen. Untuk production, Vite melakukan bundle dan minify dengan Rollup (atau Rolldown di versi yang lebih baru), menghasilkan aset ber-hash yang bisa kamu deploy ke static host mana pun.
+\`npm create vite@latest my-app -- --template react-ts\` membuatkan kerangka proyek. Selama development, Vite menyajikan source-mu sebagai ES module native, sehingga server menyala hampir seketika dan hot module replacement (HMR) hanya memperbarui module yang berubah sambil mempertahankan state komponen. Sejak Vite 8 (Maret 2026), Rolldown (ditulis dengan Rust) menggantikan pasangan esbuild + Rollup untuk dev maupun build, dan Oxc menangani parsing, transform, serta minify; butuh Node 20.19+/22.12+ dan langsung mengerti \`paths\` di tsconfig. Untuk production, Vite melakukan bundle dan minify, menghasilkan aset ber-hash yang bisa kamu deploy ke static host mana pun.
 
 File-file penting: \`index.html\` (entry sebenarnya, yang memuat \`src/main.tsx\`), \`vite.config.ts\` (plugin, alias, proxy), \`tsconfig*.json\` (pengaturan TypeScript). Environment variable berawalan \`VITE_\` diekspos lewat \`import.meta.env\`; jangan pernah menaruh rahasia di sana, karena nilainya akan ikut masuk ke bundle di browser.
 
 ### React Compiler
 
-React Compiler adalah plugin Babel yang berjalan saat build. Ia menganalisis komponen dan hook-mu lalu menyisipkan memoisasi secara otomatis. Dalam praktiknya, hasilnya setara dengan pemakaian \`useMemo\`, \`useCallback\`, dan \`memo\` yang teliti, tanpa kamu perlu menulisnya. Compiler ini mengandalkan kodemu mengikuti **Rules of React**: render yang murni, tidak memutasi props/state, hook dipanggil tanpa kondisi. Kalau sebuah komponen melanggar aturan, compiler akan melewatinya alih-alih menghasilkan kode yang salah.
+React Compiler (stabil sejak versi 1.0, Oktober 2025) adalah plugin Babel yang berjalan saat build. Ia menganalisis komponen dan hook-mu lalu menyisipkan memoisasi secara otomatis. Dalam praktiknya, hasilnya setara dengan pemakaian \`useMemo\`, \`useCallback\`, dan \`memo\` yang teliti, tanpa kamu perlu menulisnya. Compiler ini mengandalkan kodemu mengikuti **Rules of React**: render yang murni, tidak memutasi props/state, hook dipanggil tanpa kondisi. Kalau sebuah komponen melanggar aturan, compiler akan melewatinya alih-alih menghasilkan kode yang salah.
 
-Kamu mengaktifkannya dengan menambahkan \`babel-plugin-react-compiler\` ke konfigurasi Babel milik plugin React di \`vite.config.ts\`. Framework seperti Next.js menyediakan flag konfigurasi. Karena sifatnya opt-in per build, kamu bisa mengadopsinya secara bertahap.
+Dengan \`@vitejs/plugin-react\` 6+, kamu mengaktifkannya lewat \`@rolldown/plugin-babel\` dan \`reactCompilerPreset()\` yang diekspor plugin React (lihat contoh). Opsi lama \`react({ babel: { plugins: [...] } })\` sudah **dihapus** di v6, jadi tutorial lama akan gagal. Ada juga port Rust eksperimental lewat \`react({ compiler: true })\` (peer dependency opsional \`oxc-transform-react\`); anggap ini masih eksperimental. Next.js menyediakan \`reactCompiler: true\` di \`next.config.ts\`. Karena sifatnya opt-in per build, kamu bisa mengadopsinya secara bertahap.
 
 ### ESLint
 
-\`eslint-plugin-react-hooks\` (config recommended-nya sekarang sudah termasuk aturan yang ditenagai compiler) menandai pelanggaran aturan hook, dependency effect yang terlewat, mutasi saat render, dan pola yang tidak bisa dioptimalkan compiler. Anggap peringatannya sebagai pelajaran, bukan gangguan; membungkam \`exhaustive-deps\` hampir selalu berarti menyembunyikan bug stale closure.
+\`eslint-plugin-react-hooks@latest\` dengan preset **\`recommended-latest\`** (sudah termasuk aturan yang ditenagai compiler) menandai pelanggaran aturan hook, dependency effect yang terlewat, mutasi saat render, dan pola yang tidak bisa dioptimalkan compiler. Pelanggaran hanya membuat compiler melewati komponen itu saja. Anggap peringatannya sebagai pelajaran, bukan gangguan; membungkam \`exhaustive-deps\` hampir selalu berarti menyembunyikan bug stale closure.
 
 ### TypeScript, longgar dulu di awal
 
@@ -33,21 +33,16 @@ Mulailah dengan file \`.tsx\` dan biarkan inferensi melakukan sebagian besar pek
       {
         title: 'vite.config.ts dengan React Compiler',
         code: `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 
 export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
-  ],
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
   server: {
     proxy: { '/api': 'http://localhost:8080' }, // avoid CORS in dev
   },
 })`,
-        note: 'Compiler berjalan sebagai plugin Babel di dalam plugin React. Proxy meneruskan panggilan `/api` ke backend lokal, sehingga frontend bisa memakai URL relatif di semua environment.',
+        note: 'Dengan @vitejs/plugin-react 6+, compiler berjalan lewat `@rolldown/plugin-babel` memakai `reactCompilerPreset()`; opsi lama `react({ babel: ... })` sudah tidak ada. Proxy meneruskan panggilan `/api` ke backend lokal, sehingga frontend bisa memakai URL relatif di semua environment.',
       },
       {
         title: '❌ rahasia di env VITE_ vs ✅ di sisi server',
@@ -75,15 +70,15 @@ Perbaikannya memindahkan geocoding ke belakang endpoint server kecil yang menyim
     ],
     exercise: {
       task: 'Buat proyek Vite React + TypeScript baru, aktifkan React Compiler, tambahkan script `lint` dan `typecheck`, lalu pastikan compiler aktif dengan membuka React DevTools (komponen yang di-compile menampilkan badge "Memo ✨").',
-      hint: 'Install `babel-plugin-react-compiler` sebagai dev dependency lalu daftarkan di opsi plugin React.',
+      hint: 'Install `@rolldown/plugin-babel`, `@babel/core`, dan `babel-plugin-react-compiler` sebagai dev dependency, lalu tambahkan `babel({ presets: [reactCompilerPreset()] })` di samping `react()`.',
       solution: `\`\`\`bash
 npm create vite@latest shop -- --template react-ts
 cd shop
 npm install
-npm install -D babel-plugin-react-compiler eslint-plugin-react-hooks
+npm install -D @rolldown/plugin-babel @babel/core babel-plugin-react-compiler eslint-plugin-react-hooks@latest
 \`\`\`
 
-Ubah \`vite.config.ts\` seperti contoh di atas, lalu di \`package.json\`:
+Ubah \`vite.config.ts\` seperti contoh di atas, pakai preset \`recommended-latest\` dari \`eslint-plugin-react-hooks\` di \`eslint.config.js\`, lalu di \`package.json\`:
 
 \`\`\`json
 "scripts": {

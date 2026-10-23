@@ -1,7 +1,5 @@
 import { handle, upstash } from './_handler'
 
-declare const process: { env: Record<string, string | undefined> }
-
 // The Vercel Marketplace "Upstash for Redis" integration injects KV_REST_API_*;
 // a manually created Upstash database uses UPSTASH_REDIS_REST_*. Accept either.
 const redis = upstash(

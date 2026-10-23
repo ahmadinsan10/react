@@ -13,7 +13,7 @@ const details: Record<string, TopicDetail> = {
 
 ### Partial Prerendering (PPR)
 
-PPR menggabungkan SSG dan streaming dalam satu route: semua yang tidak bergantung pada request (layout, navigasi, deskripsi produk) di-prerender menjadi **static shell** yang disajikan dari edge, sementara "lubang" yang bergantung pada request (jumlah item di keranjang, rekomendasi personal) dibungkus Suspense dan di-stream dari server dalam response yang sama. Di Next.js 16, model inilah yang menjadi dasar Cache Components: bagian yang di-cache menjadi bagian dari shell, bagian dinamis yang tidak di-cache menjadi lubang yang di-stream. Cek flag konfigurasi yang tepat di dokumentasi Next.js terbaru, karena penamaannya sudah berubah-ubah antar rilis.
+PPR menggabungkan SSG dan streaming dalam satu route: semua yang tidak bergantung pada request (layout, navigasi, deskripsi produk) di-prerender menjadi **static shell** yang disajikan dari edge, sementara "lubang" yang bergantung pada request (jumlah item di keranjang, rekomendasi personal) dibungkus Suspense dan di-stream dari server dalam response yang sama. Di Next.js 16, model inilah yang menjadi dasar Cache Components: bagian yang di-cache menjadi bagian dari shell, bagian dinamis yang tidak di-cache menjadi lubang yang di-stream. Aktifkan dengan \`cacheComponents: true\` dan \`partialPrefetching: true\` di \`next.config.ts\`. Sejak Next.js 16.4 ini direkomendasikan untuk semua aplikasi dan aktif secara default di project \`create-next-app\` baru; di Next.js 17 ini akan jadi default.
 
 ### Cara memilih
 
@@ -160,6 +160,8 @@ File yang diberi \`'use client'\` mendeklarasikan sebuah **boundary**: modul itu
 1. **Props yang menyeberang dari server ke client harus bisa diserialisasi**: string, number, plain object, array, Date, Map/Set, promise, JSX, dan Server Function. Bukan instance class, bukan sembarang fungsi.
 2. **Client Component tidak bisa meng-import Server Component**: import itu akan menyeretnya ke client bundle. Sebagai gantinya, Server Component me-render Client Component dan mengoper JSX hasil render server lewat \`children\` atau prop lain. Client menerima output yang sudah jadi, semacam "lubang" yang bisa ditaruh di mana saja.
 3. **Dorong \`'use client'\` ke daun (leaf).** Menandai seluruh layout sebagai client akan menyeret semua anaknya ke bundle. Tandai tombolnya saja, dropdown-nya, chart-nya.
+4. **Context dari server (React 19.3)**: Server Component bisa langsung me-render Context yang dibuat di modul \`'use client'\`, misalnya \`<UserContext value={user}>{children}</UserContext>\`, tanpa component provider pembungkus.
+5. **Bagian khusus client**: di dalam Client Component, \`use(browser())\` (dari \`react-dom\`, React 19.3) melewati server rendering untuk component itu; HTML-nya berisi fallback Suspense terdekat, lalu component di-render normal di browser.
 
 ### Di balik layar
 
@@ -462,7 +464,7 @@ Export \`metadata\` atau \`generateMetadata\` dari page/layout untuk judul, Open
 
 ### proxy.ts
 
-Next.js 16 mengganti nama \`middleware.ts\` menjadi \`proxy.ts\` (meng-export fungsi \`proxy\`). Ia berjalan sebelum routing untuk path yang cocok: redirect, rewrite, set header, gating auth kasar, pembagian bucket A/B. Jaga tetap ringan; ia berjalan di setiap request yang cocok. **Jangan** jadikan ini satu-satunya pengecekan auth: akses data dan Server Function tetap harus memverifikasi session. Cek dokumentasi terbaru untuk default runtime dan codemod migrasinya.`,
+Next.js 16 mengganti nama \`middleware.ts\` menjadi \`proxy.ts\` (meng-export fungsi \`proxy\`). Ia berjalan sebelum routing untuk path yang cocok: redirect, rewrite, set header, gating auth kasar, pembagian bucket A/B. Jaga tetap ringan; ia berjalan di setiap request yang cocok. **Jangan** jadikan ini satu-satunya pengecekan auth: akses data dan Server Function tetap harus memverifikasi session. Sejak Next.js 16.4, \`proxy.ts\` berjalan di runtime Node.js secara default; \`middleware.ts\` sudah deprecated (masih jalan, terutama untuk kasus Edge).`,
     examples: [
       {
         title: 'Segment dengan layout, loading, error, dan not-found',
@@ -575,7 +577,7 @@ Ditambah error.tsx dengan 'use client' dan tombol reset seperti pada contoh di a
 
 ### Dinamis secara default
 
-Saat Cache Components diaktifkan (sebuah flag di \`next.config\`; cek dokumentasi terbaru untuk nama persisnya), tidak ada yang di-cache kecuali kamu memintanya. Fetch data berjalan saat request. Supaya halaman tetap cepat, semua pekerjaan saat request yang tidak di-cache harus berada di dalam boundary \`<Suspense>\`: **static shell** hasil prerender langsung disajikan dan lubang-lubang dinamisnya menyusul lewat stream. Kalau data yang tidak di-cache diakses di luar Suspense, Next.js melaporkan error saat build/dev supaya kamu membuat pilihan secara sadar.
+Saat Cache Components diaktifkan (\`cacheComponents: true\` di \`next.config.ts\`, biasanya bersama \`partialPrefetching: true\`; aktif secara default di project \`create-next-app\` baru sejak 16.4), tidak ada yang di-cache kecuali kamu memintanya. Fetch data berjalan saat request. Supaya halaman tetap cepat, semua pekerjaan saat request yang tidak di-cache harus berada di dalam boundary \`<Suspense>\`: **static shell** hasil prerender langsung disajikan dan lubang-lubang dinamisnya menyusul lewat stream. Kalau data yang tidak di-cache diakses di luar Suspense, Next.js melaporkan error saat build/dev supaya kamu membuat pilihan secara sadar.
 
 ### Opt-in: 'use cache'
 
@@ -591,6 +593,11 @@ Beri tag pada entri dengan \`cacheTag('product-42', 'products')\`. Setelah mutat
 
 - \`updateTag(tag)\` (khusus Server Action) meng-expire entri dan membuat pembacaan berikutnya di request yang sama menunggu data segar: **read-your-own-writes**, ideal saat pengguna harus langsung melihat perubahannya sendiri.
 - \`revalidateTag(tag, profile)\` menandai entri sebagai stale dengan semantik stale-while-revalidate: pengunjung berikutnya mungkin masih melihat data lama selama proses refresh. Cocok untuk konten yang boleh eventual consistency, atau dari Route Handler dan webhook.
+
+### Menjaga bagian statis (Next.js 16.4)
+
+- \`export const ensureStatic = 'shell'\` (atau \`'navigation'\` / \`'prefetch'\`) di page atau layout membuat build gagal kalau konten dinamis menyusup ke tahap itu.
+- \`await navigation()\` dan \`await prefetch()\` dari \`'next/cache'\` menunda pekerjaan yang di-cache keluar dari shell atau dari prefetch.
 
 ### Mengenali model lama
 
@@ -739,7 +746,7 @@ Dengan begini kamu punya satu tempat untuk mengaudit keamanan, menambahkan cachi
 
 ### Alternatif framework
 
-Next.js bukan satu-satunya pilihan di era RSC. **React Router framework mode** (penerus Remix) memakai route module dengan fungsi \`loader\` dan \`action\`, progressive enhancement yang kuat, dan Request/Response standar web. **TanStack Start** dibangun di atas TanStack Router dengan server function yang type-safe dari ujung ke ujung dan SSR yang fleksibel. Pilih berdasarkan keakraban tim, hosting, dan seberapa banyak kamu ingin framework mengurus caching dan data.`,
+Next.js bukan satu-satunya pilihan di era RSC. **React Router framework mode** (v8, penerus Remix; import dari \`react-router\` karena \`react-router-dom\` sudah dihapus, dan middleware aktif secara default) memakai route module dengan fungsi \`loader\` dan \`action\`, progressive enhancement yang kuat, dan Request/Response standar web. **TanStack Start** dibangun di atas TanStack Router dengan server function yang type-safe dari ujung ke ujung dan SSR yang fleksibel. Pilih berdasarkan keakraban tim, hosting, dan seberapa banyak kamu ingin framework mengurus caching dan data.`,
     examples: [
       {
         title: 'Data access layer khusus server',

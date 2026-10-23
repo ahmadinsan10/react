@@ -26,7 +26,11 @@ TypeScript membandingkan bentuk, bukan nama. Objek apa pun yang punya properti y
 
 ### Kapan tidak perlu menulis type
 
-Biarkan inferensi bekerja. Beri anotasi pada parameter fungsi, return type yang publik, dan API yang di-export; jangan anotasi setiap variabel lokal. Anotasi berlebihan malah menutupi type hasil inferensi yang lebih baik dan menambah beban perawatan.`,
+Biarkan inferensi bekerja. Beri anotasi pada parameter fungsi, return type yang publik, dan API yang di-export; jangan anotasi setiap variabel lokal. Anotasi berlebihan malah menutupi type hasil inferensi yang lebih baik dan menambah beban perawatan.
+
+### Tooling di 2026: TypeScript 7
+
+TypeScript 7 (Juli 2026) adalah rilis stabil pertama dari compiler native yang ditulis ulang dengan Go: full build kira-kira 8–12× lebih cepat, dan kamu tetap meng-install \`typescript\` serta menjalankan perintah \`tsc\` yang sama. Ada dua catatan: belum ada API programatik yang stabil sampai 7.1, jadi tool yang membutuhkannya (pengecekan template Vue/Svelte/Astro/Angular) masih berjalan di TypeScript 6; dan output JS hanya bisa di-downlevel sampai ES2021, belum ada emit untuk decorator. Di aplikasi React berbasis Vite hal ini jarang berpengaruh, karena Vite hanya membuang type dan \`tsc\` cukup melakukan type-check.`,
     examples: [
       {
         title: '❌ any vs ✅ unknown + narrowing',
@@ -554,7 +558,7 @@ function RadioGroup<T>({ name, options, value, onChange, getLabel, getKey }: Rad
   },
 
   zod: {
-    explanation: `Type TypeScript dihapus saat compile. Ketika data masuk ke aplikasimu dari jaringan, \`localStorage\`, search params URL, \`postMessage\`, atau form, compiler **sama sekali tidak tahu bentuk aslinya**. Memberi type \`User\` pada \`await res.json()\` itu sama saja kamu berjanji atas nama server yang tidak kamu kendalikan. **Zod** memungkinkan kamu menulis bentuk data sekali sebagai schema runtime, memeriksa data sungguhan terhadapnya, lalu *meng-infer* type statis dari schema yang sama, sehingga type dan validasi tidak mungkin melenceng satu sama lain.
+    explanation: `Type TypeScript dihapus saat compile. Ketika data masuk ke aplikasimu dari jaringan, \`localStorage\`, search params URL, \`postMessage\`, atau form, compiler **sama sekali tidak tahu bentuk aslinya**. Memberi type \`User\` pada \`await res.json()\` itu sama saja kamu berjanji atas nama server yang tidak kamu kendalikan. **Zod** memungkinkan kamu menulis bentuk data sekali sebagai schema runtime, memeriksa data sungguhan terhadapnya, lalu *meng-infer* type statis dari schema yang sama, sehingga type dan validasi tidak mungkin melenceng satu sama lain. Contoh-contoh di sini memakai **Zod 4**: format string ada di level atas (\`z.email()\`, \`z.url()\`, \`z.uuid()\`, \`z.iso.date()\`; gaya lama \`z.string().email()\` sudah deprecated) dan pesan kustom memakai \`{ error: '...' }\`, bukan \`message\` yang sudah deprecated.
 
 ### Parse, jangan sekadar validasi
 
@@ -601,7 +605,7 @@ const InvoiceSchema = z.object({
   number: z.string(),
   amount_cents: z.number().int().nonnegative(),
   currency: z.enum(['USD', 'EUR', 'IDR']),
-  due_date: z.string().date(),
+  due_date: z.iso.date(),
   status: z.enum(['draft', 'sent', 'paid', 'void']),
 }).transform((i) => ({
   id: i.id,
@@ -651,17 +655,17 @@ export function parseFilters(params: URLSearchParams): ProductFilters {
     ],
     exercise: {
       task: 'Tulis schema Zod untuk form pendaftaran: email, password (minimal 12 karakter, ada satu digit), confirmPassword (harus sama), dan kode referral opsional berupa 8 huruf kapital/digit. Export type hasil inferensinya dan sebuah fungsi yang mengembalikan error per field sebagai `Record<string, string>`.',
-      hint: 'Pakai `.refine` pada objeknya dengan `path: [\'confirmPassword\']`, lalu `error.flatten().fieldErrors` (atau iterasi `error.issues`).',
+      hint: 'Pakai `.refine` pada objeknya dengan `path: [\'confirmPassword\']`, lalu iterasi `error.issues` untuk membangun map-nya.',
       solution: `\`\`\`ts
 import { z } from 'zod'
 
 export const SignUpSchema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(12, 'At least 12 characters').regex(/\\d/, 'Include a digit'),
+  email: z.email({ error: 'Enter a valid email' }),
+  password: z.string().min(12, { error: 'At least 12 characters' }).regex(/\\d/, { error: 'Include a digit' }),
   confirmPassword: z.string(),
-  referralCode: z.string().regex(/^[A-Z0-9]{8}$/, 'Invalid code').optional(),
+  referralCode: z.string().regex(/^[A-Z0-9]{8}$/, { error: 'Invalid code' }).optional(),
 }).refine((v) => v.password === v.confirmPassword, {
-  message: 'Passwords do not match',
+  error: 'Passwords do not match',
   path: ['confirmPassword'],
 })
 export type SignUp = z.infer<typeof SignUpSchema>

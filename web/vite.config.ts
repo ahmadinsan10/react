@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import { handle, memoryRedis } from './api/_handler'
 
 /** Serves /api/progress during `npm run dev` with an in-memory store, mirroring the Vercel function. */
@@ -26,6 +27,7 @@ function devSyncApi(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), devSyncApi()],
+  // React Compiler via the plugin-react 6 preset (the inline `react({ babel })` option was removed in v6).
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), devSyncApi()],
   test: { environment: 'jsdom' },
 })

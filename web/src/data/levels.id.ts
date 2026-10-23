@@ -389,7 +389,7 @@ type State =
       },
       animation: {
         title: 'Animasi',
-        body: `CSS transition untuk kasus sederhana, **Motion** untuk animasi kompleks/layout, View Transitions API untuk transisi halaman. Selalu hormati \`prefers-reduced-motion\`.`,
+        body: `CSS transition untuk kasus sederhana, **Motion** untuk animasi kompleks/layout, \`<ViewTransition>\` React yang sudah stabil (React 19.3) untuk menganimasikan update Transition: enter/exit, elemen bersama, dan munculnya konten Suspense. Selalu hormati \`prefers-reduced-motion\`.`,
       },
       storybook: {
         title: 'Storybook',
@@ -423,7 +423,7 @@ type State =
       },
       vitest: {
         title: 'Vitest',
-        body: `Test runner yang cepat dan native untuk Vite, dengan API yang kompatibel dengan Jest. Pakai untuk logika murni (reducer, formatter, validasi) dan untuk menjalankan test component.`,
+        body: `Test runner yang cepat dan native untuk Vite, dengan API yang kompatibel dengan Jest. Pakai untuk logika murni (reducer, formatter, validasi) dan untuk menjalankan test component. Vitest 5 meng-clear mock sebelum setiap test dan menggagalkan assertion async yang tidak di-\`await\`.`,
       },
       rtl: {
         title: 'React Testing Library',
@@ -431,7 +431,7 @@ type State =
       },
       msw: {
         title: 'Mock Service Worker',
-        body: `Mock jaringan di batas HTTP, bukan me-mock \`fetch\` atau hook-mu. Handler yang sama bisa dipakai di test, Storybook, dan browser.`,
+        body: `Mock jaringan di batas HTTP, bukan me-mock \`fetch\` atau hook-mu. Handler yang sama bisa dipakai di test, Storybook, dan browser. MSW 3 sudah ESM-only dan mengganti nama \`onUnhandledRequest\` menjadi \`onUnhandledFrame\`.`,
       },
       playwright: {
         title: 'E2E dengan Playwright',
@@ -486,7 +486,7 @@ type State =
       },
       bundle: {
         title: 'Bundle & jaringan',
-        body: `Lakukan code splitting dengan \`lazy\` + \`Suspense\`, pecah per route, analisis bundle, dan hindari dependency yang berat. Optimasi gambar (ukuran, format modern, lazy loading) dan font. Pindahkan pekerjaan yang berat di CPU ke Web Worker.`,
+        body: `Lakukan code splitting dengan \`lazy\` + \`Suspense\`, pecah per route, analisis bundle, dan hindari dependency yang berat. Optimasi gambar (ukuran, format modern, lazy loading) dan font. Pindahkan pekerjaan yang berat di CPU ke Web Worker. Vite 8 memakai Rolldown untuk dev maupun build.`,
       },
     },
     projects: [
@@ -534,7 +534,7 @@ type State =
       },
       compiler: {
         title: 'React Compiler',
-        body: `Plugin Babel yang bekerja saat build, menganalisis component, dan menyisipkan memoization yang granular. Compiler ini mengandalkan kodemu mengikuti aturan: render yang pure, tanpa mutasi props/state.`,
+        body: `Plugin Babel (stabil 1.0) yang bekerja saat build, menganalisis component, dan menyisipkan memoization yang granular. Di Vite, pasang lewat \`reactCompilerPreset\` + \`@rolldown/plugin-babel\`; di Next.js, cukup \`reactCompiler: true\`. Compiler ini mengandalkan kodemu mengikuti aturan: render yang pure, tanpa mutasi props/state.`,
       },
     },
     projects: [
@@ -555,16 +555,16 @@ type State =
   },
   10: {
     title: 'Server Components & Next.js',
-    tagline: 'React full-stack. Cek versi Next.js terbaru sebelum mulai.',
+    tagline: 'React full-stack dengan Next.js 16.4. Versi bergerak cepat: cek release notes-nya.',
     checkpoint: 'Untuk setiap bagian UI, kamu bisa menyebutkan apakah ia di-render di server atau client, apakah di-cache (\'use cache\') atau dinamis, dan tag mana yang meng-invalidate-nya.',
     topics: {
       strategies: {
         title: 'Strategi rendering',
-        body: `**CSR** me-render di browser. **SSR** me-render HTML per request. **SSG** me-render saat build. **Streaming** mengirim HTML sepotong demi sepotong seiring data siap. **Partial Prerendering** langsung menyajikan shell statis lalu men-stream bagian-bagian yang dinamis.`,
+        body: `**CSR** me-render di browser. **SSR** me-render HTML per request. **SSG** me-render saat build. **Streaming** mengirim HTML sepotong demi sepotong seiring data siap. **Partial Prerendering** langsung menyajikan shell statis lalu men-stream bagian-bagian yang dinamis (Cache Components, aktif secara default di aplikasi Next.js baru sejak 16.4).`,
       },
       rsc: {
         title: 'Server Components',
-        body: `Server Components hanya berjalan di server: mereka bisa membaca database secara langsung dan mengirim **nol JS**. Client Components (\`'use client'\`) dibutuhkan untuk state, effect, dan event handler. Props yang melintasi batas server–client harus bisa diserialisasi. Oper Server Components *ke dalam* Client Components sebagai \`children\`.`,
+        body: `Server Components hanya berjalan di server: mereka bisa membaca database secara langsung dan mengirim **nol JS**. Client Components (\`'use client'\`) dibutuhkan untuk state, effect, dan event handler. Props yang melintasi batas server–client harus bisa diserialisasi. Oper Server Components *ke dalam* Client Components sebagai \`children\`. Sejak React 19.3, Server Component bisa langsung me-render \`<Context value>\`.`,
       },
       actions: {
         title: 'Server Functions',
@@ -572,15 +572,15 @@ type State =
       },
       'app-router': {
         title: 'Next.js App Router',
-        body: `Layout, file \`loading\`/\`error\`/\`not-found\`, route group, parallel & intercepting route, metadata, \`Image\` dan \`Font\`, serta \`proxy.ts\` (namanya \`middleware.ts\` sebelum Next.js 16).`,
+        body: `Layout, file \`loading\`/\`error\`/\`not-found\`, route group, parallel & intercepting route, metadata, \`Image\` dan \`Font\`, serta \`proxy.ts\` (namanya \`middleware.ts\` sebelum Next.js 16; default-nya runtime Node.js, dan \`middleware.ts\` sudah deprecated).`,
       },
       'cache-components': {
         title: 'Caching dengan Cache Components',
-        body: `Di Next.js versi terbaru, semuanya **dinamis secara default**. Aktifkan caching dengan directive \`'use cache'\`, atur masa berlakunya dengan \`cacheLife\`, beri tag pada entri dengan \`cacheTag\`, dan invalidate dengan \`revalidateTag\`/\`updateTag\` setelah mutation. Bungkus bagian dinamis dengan \`<Suspense>\` supaya shell statis di-stream lebih dulu. Kode lama memakai model empat cache yang implisit — kenali model itu, tapi pelajari model yang eksplisit.`,
+        body: `Aktifkan dengan \`cacheComponents: true\` (default di project \`create-next-app\` baru sejak 16.4). Setelah itu semuanya **dinamis secara default**. Aktifkan caching dengan directive \`'use cache'\`, atur masa berlakunya dengan \`cacheLife\`, beri tag pada entri dengan \`cacheTag\`, dan invalidate dengan \`revalidateTag\`/\`updateTag\` setelah mutation. Bungkus bagian dinamis dengan \`<Suspense>\` supaya shell statis di-stream lebih dulu. Kode lama memakai model empat cache yang implisit — kenali model itu, tapi pelajari model yang eksplisit.`,
       },
       'data-layer': {
         title: 'Data layer & auth',
-        body: `Pakai ORM (Prisma atau Drizzle) dengan Postgres dan library auth (Auth.js atau Better Auth). Alternatif selain Next.js: React Router framework mode dan TanStack Start.`,
+        body: `Pakai ORM (Prisma atau Drizzle) dengan Postgres dan library auth (Auth.js atau Better Auth). Alternatif selain Next.js: React Router v8 framework mode dan TanStack Start.`,
       },
     },
     projects: [
@@ -617,7 +617,7 @@ type State =
       },
       security: {
         title: 'Keamanan',
-        body: `React meng-escape teks secara default; \`dangerouslySetInnerHTML\` melewati perlindungan itu — sanitasi dengan DOMPurify kalau kamu terpaksa memakainya. Tambahkan Content Security Policy, jangan pernah taruh secret di bundle client, dan audit dependency (Renovate/Dependabot).`,
+        body: `React meng-escape teks secara default; \`dangerouslySetInnerHTML\` melewati perlindungan itu — sanitasi dengan DOMPurify kalau kamu terpaksa memakainya. Tambahkan Content Security Policy (React 19.3 mendukung Trusted Types), jangan pernah taruh secret di bundle client, dan audit dependency (Renovate/Dependabot).`,
       },
       i18n: {
         title: 'Internasionalisasi',
@@ -686,7 +686,7 @@ type State =
       },
       current: {
         title: 'Tetap up to date',
-        body: `Ikuti blog React, RFC, talk di React Conf, dan This Week in React.`,
+        body: `Ikuti blog React, RFC, talk di React Conf, dan This Week in React. Sejak Februari 2026 React dikelola oleh React Foundation (Linux Foundation); baca release notes sebelum upgrade.`,
       },
       interview: {
         title: 'Kedalaman untuk interview',

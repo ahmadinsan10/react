@@ -852,7 +852,25 @@ export function RelativeTime({ iso }: { iso: string }) {
   },
 
   compiler: {
-    explanation: `The **React Compiler** is a build-time tool (a Babel plugin, with integrations for Vite, Next.js and other bundlers) that rewrites your components and hooks to memoize automatically. Its stable 1.0 release arrived in late 2025. Check the current docs for the exact setup for your toolchain.
+    explanation: `The **React Compiler** is a build-time tool (a Babel plugin, with integrations for Vite, Next.js and other bundlers) that rewrites your components and hooks to memoize automatically. Its stable 1.0 release arrived in October 2025.
+
+### Setup today
+
+\`\`\`ts
+// vite.config.ts (@vitejs/plugin-react 6+; the old react({ babel: … }) option was removed)
+// npm install -D @rolldown/plugin-babel @babel/core babel-plugin-react-compiler
+import { defineConfig } from 'vite'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+
+export default defineConfig({
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+})
+\`\`\`
+
+- **Next.js**: \`reactCompiler: true\` in \`next.config.ts\`.
+- **Experimental Rust port**: \`react({ compiler: true })\` in Vite (needs the optional \`oxc-transform-react\` peer), or \`experimental.turbopackRustReactCompiler: true\` in Next.js 16.3+. Fast, but still experimental.
+- **Lint**: \`eslint-plugin-react-hooks@latest\` with the \`recommended-latest\` preset includes the compiler rules.
 
 ### What problem it solves
 
@@ -926,8 +944,10 @@ function InvoiceListPlain({ invoices, onSelect }: Props) {
   return overdue.map((i) => <InvoiceRow key={i.id} invoice={i} onClick={() => onSelect(i.id)} />)
 }
 
-// vite.config.ts (check current docs for the recommended plugin setup)
-// react({ babel: { plugins: ['babel-plugin-react-compiler'] } })`,
+// vite.config.ts (@vitejs/plugin-react 6+)
+// import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+// import babel from '@rolldown/plugin-babel'
+// plugins: [react(), babel({ presets: [reactCompilerPreset()] })]`,
         note: 'The compiler caches the filtered array, the arrow functions and the JSX elements based on what they depend on. Keep `today()` deterministic within a render.',
       },
     ],

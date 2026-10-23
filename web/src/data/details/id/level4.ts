@@ -23,6 +23,10 @@ Dengan \`createBrowserRouter\`, setiap route bisa punya \`loader\` yang berjalan
 
 Lindungi route di loader (redirect ke \`/login?redirectTo=...\` kalau tidak ada session) atau di layout route yang memeriksa auth. Ingat, ini hanya untuk UX: server tetap harus mengotorisasi setiap request. Pakai \`lazy\` pada route untuk melakukan code splitting per halaman, sehingga bundle awal hanya berisi apa yang dibutuhkan layar pertama.
 
+### React Router v8 (2026)
+
+Contoh-contoh di sini memakai React Router v8 (Juni 2026). Package \`react-router-dom\` sudah **dihapus**: import semuanya dari \`react-router\` (bagian khusus DOM dari \`react-router/dom\`). Versi ini hanya ESM dan butuh Node 22.22+, React 19.2.7+, serta Vite 7+. Future flag yang dulu opsional sekarang jadi default: **middleware aktif secara default**, route module dipecah secara default, dan fungsi meta menerima \`loaderData\` (parameter \`data\` yang lama sudah tidak ada). Ada tiga mode: **declarative** (router client sederhana dengan \`<Routes>\`), **data mode** (\`createBrowserRouter\` dengan loader dan action, seperti di sini), dan **framework mode** (penerus Remix, dengan route berbasis file dan SSR). v6 dan Remix v2 sudah end-of-life.
+
 ### Kapan memilih TanStack Router
 
 Library ini menawarkan path, params, dan search params tervalidasi yang sepenuhnya type-safe, dengan konsekuensi model mental yang berbeda. Dua-duanya oke; yang penting kamu paham nested layout, state di URL, dan memuat data sebelum render.`,
@@ -410,7 +414,7 @@ function Orders() {
 
 ### React Hook Form + Zod
 
-React Hook Form (RHF) menjaga input tetap **uncontrolled** lewat \`register\`, jadi mengetik tidak me-render ulang seluruh form: tetap cepat bahkan untuk form besar. Pasangkan dengan \`zodResolver(schema)\` supaya satu schema Zod mendefinisikan validasi sekaligus type TypeScript untuk nilai-nilainya. API utama: \`useForm<T>({ resolver, defaultValues, mode })\`, \`register\`, \`handleSubmit\`, \`formState: { errors, isSubmitting, isDirty }\`, \`setError\` untuk error dari server, \`reset\` setelah data server dimuat, dan \`Controller\` untuk input non-native (date picker, combobox). Selalu sediakan \`defaultValues\`.
+React Hook Form (RHF) menjaga input tetap **uncontrolled** lewat \`register\`, jadi mengetik tidak me-render ulang seluruh form: tetap cepat bahkan untuk form besar. Pasangkan dengan \`zodResolver(schema)\` supaya satu schema Zod mendefinisikan validasi sekaligus type TypeScript untuk nilai-nilainya (gaya Zod 4: \`z.email()\`, \`z.url()\`, dan \`{ error: '...' }\` untuk pesan). API utama: \`useForm<T>({ resolver, defaultValues, mode })\`, \`register\`, \`handleSubmit\`, \`formState: { errors, isSubmitting, isDirty }\`, \`setError\` untuk error dari server, \`reset\` setelah data server dimuat, dan \`Controller\` untuk input non-native (date picker, combobox). Selalu sediakan \`defaultValues\`.
 
 ### React 19 Actions
 
@@ -433,9 +437,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 const ProjectSchema = z.object({
-  name: z.string().trim().min(3, 'At least 3 characters'),
-  slug: z.string().regex(/^[a-z0-9-]+$/, 'Lowercase letters, digits and dashes'),
-  budget: z.coerce.number().positive('Must be positive'),
+  name: z.string().trim().min(3, { error: 'At least 3 characters' }),
+  slug: z.string().regex(/^[a-z0-9-]+$/, { error: 'Lowercase letters, digits and dashes' }),
+  budget: z.coerce.number().positive({ error: 'Must be positive' }),
 })
 type ProjectInput = z.infer<typeof ProjectSchema>
 
@@ -477,7 +481,7 @@ import { useFormStatus } from 'react-dom'
 type State = { ok: boolean; errors?: Partial<Record<'email', string>>; message?: string }
 
 async function subscribe(_prev: State, formData: FormData): Promise<State> {
-  const parsed = z.object({ email: z.string().email() }).safeParse({ email: formData.get('email') })
+  const parsed = z.object({ email: z.email() }).safeParse({ email: formData.get('email') })
   if (!parsed.success) return { ok: false, errors: { email: 'Enter a valid email' } }
   const res = await api.subscribe(parsed.data.email)
   return res.ok ? { ok: true, message: 'Check your inbox!' } : { ok: false, message: 'Try again later' }
@@ -520,7 +524,7 @@ export function NewsletterForm() {
       solution: `\`\`\`tsx
 const ProfileSchema = z.object({
   displayName: z.string().trim().min(2).max(40),
-  website: z.string().url().or(z.literal('')),
+  website: z.url().or(z.literal('')),
 })
 type Profile = z.infer<typeof ProfileSchema>
 

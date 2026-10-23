@@ -4,7 +4,7 @@ This guide tells you **what to learn and what to build**, step by step. It does 
 You write every line yourself.
 
 **Path:** JavaScript foundations → React fundamentals → real apps → architecture & performance → React internals → production & leadership.
-**Stack:** React 19, TypeScript, Vite, then Next.js (App Router).
+**Stack (October 2026):** React 19.3, TypeScript 7, Vite 8, then Next.js 16.4 (App Router).
 **How you'll prove expertise:** 8 projects of increasing difficulty, plus a capstone.
 
 ---
@@ -41,7 +41,7 @@ You write every line yourself.
 - After each project, write a short `NOTES.md` in its folder: what was hard, what you'd do differently. This makes the learning stick.
 
 - Topics marked **(stretch)** are optional. Skim them, note they exist, and come back later. Don't let them block your progress.
-- **Versions move fast.** Before starting a level, check react.dev and the docs of each library for the current major version. Level 10 (Next.js) changes the most often.
+- **Versions move fast.** Before starting a level, check react.dev and the docs of each library for the current major version. Level 10 (Next.js) changes the most often. As of October 2026: React 19.3, Next.js 16.4, React Router 8, TypeScript 7, Vite 8, Vitest 5, Zod 4, MSW 3, Jotai 3. React is governed by the React Foundation (Linux Foundation) since February 2026.
 
 **Rough timeline (part-time, ~10 h/week):** Levels 0–4 ≈ 3 months · Levels 5–8 ≈ 3 months · Levels 9–12 ≈ 3–6 months, plus ongoing practice.
 
@@ -97,8 +97,8 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 1. Install Node.js LTS.
 2. Create a project with **Vite** (`npm create vite@latest`) using the **React + TypeScript** template.
 3. Use TypeScript loosely until Level 3: type props with simple inline types and let inference do the rest. Don't fight the type checker yet. Level 3 tightens everything.
-4. Enable the **React Compiler** (follow the "React Compiler → Installation" page on react.dev for Vite). It automatically memoizes components and values, so you can write plain code without `useMemo`/`useCallback` from day one.
-5. Set up **ESLint** with the flat config (`eslint.config.js`, which the Vite template already uses) and make sure **`eslint-plugin-react-hooks`** is enabled with its recommended config. In current versions, this plugin also includes the React Compiler's rules and flags code the compiler can't optimize (impure renders, mutating props, and so on). Treat its warnings as lessons.
+4. Enable the **React Compiler** (follow the "React Compiler → Installation" page on react.dev for Vite). With `@vitejs/plugin-react` 6+, you add the `reactCompilerPreset` through `@rolldown/plugin-babel`; the old `react({ babel: … })` option no longer exists, so ignore tutorials that use it. It automatically memoizes components and values, so you can write plain code without `useMemo`/`useCallback` from day one.
+5. Set up **ESLint** with the flat config (`eslint.config.js`, which the Vite template already uses) and make sure **`eslint-plugin-react-hooks`** is enabled with its `recommended-latest` config. In current versions, this plugin also includes the React Compiler's rules and flags code the compiler can't optimize (impure renders, mutating props, and so on). Treat its warnings as lessons.
 
 **Learn** (react.dev → *Learn* section, in order):
 1. **Thinking in React:** break a UI mockup into a component tree; decide where state lives.
@@ -159,7 +159,7 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 5. Typing context (and avoiding the `undefined` default with a custom hook that throws).
 6. **Generic components:** e.g. a `<List<T>>` or `<Select<T>>` that's fully typed.
 7. Extending native element props (`ComponentProps<'button'>`).
-8. Validating runtime data at the boundary with **Zod**: API responses are `unknown` until validated.
+8. Validating runtime data at the boundary with **Zod** (v4: use the top-level formats like `z.email()`): API responses are `unknown` until validated.
 9. `tsconfig` strict mode. Turn on `strict` and `noUncheckedIndexedAccess`.
 
 **Build:** convert your Weather app to strict TypeScript with **zero `any`**, and validate API responses with Zod.
@@ -195,7 +195,7 @@ React is "just JavaScript". Weak JS is the #1 reason people struggle with React.
 **Learn:**
 1. **Where state should live**, from closest to widest: local → lifted → URL → context → external store → server cache. Always choose the closest that works.
 2. **Context performance:** splitting contexts, separating state and dispatch contexts, memoizing provider values.
-3. **External stores:** learn **Zustand** deeply (simple and recommended). Learn **Redux Toolkit** well enough to work in existing codebases, since it's still common in enterprise apps: slices, selectors and RTK Query. **(stretch)** **Jotai** (atomic state).
+3. **External stores:** learn **Zustand** deeply (simple and recommended). Learn **Redux Toolkit** well enough to work in existing codebases, since it's still common in enterprise apps: slices, selectors and RTK Query. **(stretch)** **Jotai** (atomic state; in v3 `atomFamily` lives in `jotai-family` and `loadable` is replaced by `unwrap`).
 4. **(stretch) State machines** with **XState** for complex flows (wizards, checkout, media players). You can model the checkout below with `useReducer` and a discriminated union instead.
 5. **Project structure:** feature-based folders (`features/auth`, `features/cart`) instead of type-based (`components/`, `hooks/`). Use public APIs (`index.ts`) per feature and clear import boundaries.
 6. **Separation of concerns:** UI components vs data hooks vs pure domain logic (testable without React).
@@ -228,7 +228,7 @@ Then **rewrite the cart with Redux Toolkit** in a branch and compare. Write down
    - forwarding refs (in React 19, `ref` is a regular prop).
 4. **Headless UI libraries:** **Radix UI**, **React Aria**, and **shadcn/ui** (copy-in components built on Radix and Tailwind).
 5. **Accessibility (a11y), in depth:** semantic HTML first, keyboard navigation, focus traps, ARIA only when needed, color contrast, screen-reader testing (NVDA on Windows), and the WAI-ARIA Authoring Practices patterns.
-6. **Animation:** CSS transitions, **Motion** (formerly Framer Motion), the View Transitions API, and respecting `prefers-reduced-motion`.
+6. **Animation:** CSS transitions, **Motion** (formerly Framer Motion), React's stable `<ViewTransition>` (React 19.3: only Transition updates animate; learn enter/exit/share, View Transition Classes and `addTransitionType`), and respecting `prefers-reduced-motion`.
 7. **Storybook:** develop and document components in isolation.
 
 **Build:** your own **mini design system**: Button, Input, Select, Checkbox, Modal/Dialog, Tabs, Tooltip, Toast, Dropdown Menu, and DataTable (sorting, pagination, row selection).
@@ -244,9 +244,9 @@ Then **rewrite the cart with Redux Toolkit** in a branch and compare. Write down
 
 **Learn:**
 1. **The testing trophy:** mostly integration tests, some unit tests, a few end-to-end (E2E) tests, plus static checks (TS, ESLint).
-2. **Vitest:** unit tests for pure logic and hooks.
+2. **Vitest** (v5): unit tests for pure logic and hooks. Know that mocks are cleared before each test and un-awaited async assertions fail.
 3. **React Testing Library:** test behavior, not implementation. Query by role or label (`getByRole`), use `user-event`, and `findBy*` for async.
-4. **Mock Service Worker (MSW):** mock the network at the boundary instead of mocking `fetch` or your hooks.
+4. **Mock Service Worker (MSW 3):** mock the network at the boundary instead of mocking `fetch` or your hooks. Make unhandled requests fail with `onUnhandledFrame` (called `onUnhandledRequest` before v3).
 5. **Testing hooks** (`renderHook`), context providers, and routing.
 6. **Playwright:** E2E tests for critical user flows; also visual regression and accessibility checks (`@axe-core/playwright`).
 7. **What not to test:** implementation details, third-party libraries, and snapshot tests of large trees.
@@ -315,19 +315,20 @@ This is what separates experts from advanced users: knowing *why*, not just *how
 1. **Rendering strategies:** CSR, SSR, SSG, ISR, streaming, and partial prerendering. Know when to use each.
 2. **React Server Components:** server vs client components, the `'use client'` boundary, passing server components as `children` to client components, and what can't be serialized.
 3. **Server Functions / Actions** (`'use server'`): mutations, revalidation, progressive enhancement, and their **security implications** (they are public endpoints, so validate and authorize every call).
-> **Check versions first.** Next.js changes faster than anything else in this guide. Read the release notes for the current major version before starting. The points below describe Next.js 16.
+> **Check versions first.** Next.js changes faster than anything else in this guide. Read the release notes for the current major version before starting. The points below describe Next.js 16.4.
 
-4. **Next.js App Router:** layouts, loading/error/not-found files, route groups, parallel and intercepting routes, metadata/SEO, the `Image` and `Font` components, and **`proxy.ts`** (called `middleware.ts` before Next.js 16; you'll still see the old name in tutorials and older projects).
+4. **Next.js App Router:** layouts, loading/error/not-found files, route groups, parallel and intercepting routes, metadata/SEO, the `Image` and `Font` components, and **`proxy.ts`** (called `middleware.ts` before Next.js 16; it runs on the Node.js runtime by default, and `middleware.ts` is deprecated but you'll still see it in tutorials and older projects).
 5. **Caching with Cache Components:** in current Next.js, everything is **dynamic by default** and you opt in to caching explicitly:
-   - enable Cache Components in `next.config`,
+   - enable Cache Components with `cacheComponents: true` and `partialPrefetching: true` in `next.config.ts` (already on in new `create-next-app` projects since 16.4, and the default in Next.js 17),
    - mark cached functions, components or pages with the **`'use cache'`** directive,
    - control lifetime with **`cacheLife`** and tag entries with **`cacheTag`**,
    - invalidate with `revalidateTag` / `updateTag` after mutations,
-   - wrap uncached dynamic parts in `<Suspense>` so the static shell streams first (**Partial Prerendering**).
+   - wrap uncached dynamic parts in `<Suspense>` so the static shell streams first (**Partial Prerendering**),
+   - use `ensureStatic` to make the build fail if dynamic content sneaks into the shell.
 
    Older tutorials describe four implicit cache layers (request memoization, data cache, full-route cache, router cache) and `fetch` caching options. Recognize that model when you meet it in existing code, but learn the explicit `'use cache'` model first. This is the hardest part of Next.js, so experiment until it's clear.
 6. **Data layer:** an ORM (Prisma or Drizzle) with Postgres, and auth (Auth.js or Better Auth).
-7. Alternatives worth knowing: **React Router v7 framework mode** (formerly Remix) and **TanStack Start**.
+7. Alternatives worth knowing: **React Router v8 framework mode** (formerly Remix; import from `react-router`, since `react-router-dom` is gone) and **TanStack Start**.
 
 **Build:** a **full-stack app in Next.js**, e.g. a blog/CMS or a project-management board (Trello-like):
 - server components for reading data, Server Actions for mutations,
@@ -348,7 +349,7 @@ This is what separates experts from advanced users: knowing *why*, not just *how
 2. **CI/CD:** lint → type-check → test → build → preview deploys per pull request.
 3. **Error handling:** error boundaries (at route and widget level), reporting with **Sentry**, user-friendly fallbacks.
 4. **Observability:** Real User Monitoring of Web Vitals, analytics, feature flags.
-5. **Security:** XSS (and why `dangerouslySetInnerHTML` is dangerous), sanitization (DOMPurify), Content Security Policy, CSRF, secrets never in client bundles, dependency auditing (`npm audit`, Renovate/Dependabot).
+5. **Security:** XSS (and why `dangerouslySetInnerHTML` is dangerous), sanitization (DOMPurify), Content Security Policy (and Trusted Types, which React 19.3 supports), CSRF, secrets never in client bundles, dependency auditing (`npm audit`, Renovate/Dependabot).
 6. **Internationalization:** react-intl or i18next, pluralization, date/number formatting, right-to-left layouts.
 7. **Monorepos:** pnpm workspaces + **Turborepo** (or Nx) for sharing a UI library across apps.
 8. **(stretch) PWA & offline:** service workers, caching strategies.

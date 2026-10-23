@@ -237,7 +237,7 @@ The Profiler's "why did this render" originally said "parent component rendered"
     explanation: `Once the profiler has identified a slow interaction, apply fixes from cheapest and most structural to most manual. Structural fixes remove work; memoization only skips it, and adds complexity.
 
 ### 1. Let the React Compiler do memoization
-The React Compiler (stable since late 2025) is a build-time Babel plugin that analyses components and hooks and automatically memoizes JSX, computed values and callbacks with precise dependencies. With it enabled, most \`memo\`, \`useMemo\` and \`useCallback\` in application code becomes unnecessary. In React DevTools, compiled components show a **"Memo ✨"** badge. If a slow component lacks the badge, the compiler bailed out, usually because the code breaks the Rules of React (mutating props or state, reading refs during render, conditional hooks). The \`eslint-plugin-react-hooks\` compiler rules report these. Fix the rule violation and the compiler can optimise it.
+The React Compiler (stable since late 2025) is a build-time Babel plugin that analyses components and hooks and automatically memoizes JSX, computed values and callbacks with precise dependencies. With it enabled, most \`memo\`, \`useMemo\` and \`useCallback\` in application code becomes unnecessary. In React DevTools, compiled components show a **"Memo ✨"** badge. If a slow component lacks the badge, the compiler bailed out, usually because the code breaks the Rules of React (mutating props or state, reading refs during render, conditional hooks). The \`eslint-plugin-react-hooks\` compiler rules report these. Fix the rule violation and the compiler can optimise it. Setup: in Vite (with \`@vitejs/plugin-react\` 6+) add \`babel({ presets: [reactCompilerPreset()] })\` from \`@rolldown/plugin-babel\` next to \`react()\` (the old \`react({ babel: … })\` option was removed); in Next.js set \`reactCompiler: true\`. Use the \`recommended-latest\` preset of \`eslint-plugin-react-hooks\`.
 
 ### 2. Move state down
 If state is held higher than needed, every component between the owner and the leaf renders on each change. Colocate state with the component that uses it. This is the single most effective fix and costs nothing.
@@ -681,6 +681,9 @@ Bundlers split code at dynamic \`import()\` boundaries. In React, \`lazy(() => i
 
 ### Analyse what you ship
 Use \`rollup-plugin-visualizer\` (Vite) or \`source-map-explorer\` to see a treemap of the bundle. Common findings: a full date library with every locale, \`lodash\` imported whole, an icon library without tree shaking, two versions of the same package, polyfills for browsers you do not support. Set a **performance budget** in CI (for example, the initial JS for the home route under 170 KB gzip) so regressions are caught in review.
+
+### The bundler: Vite 8 and Rolldown
+Since Vite 8, **Rolldown** (written in Rust) replaces the esbuild + Rollup pair for both dev and production builds, and **Oxc** handles parsing, transforms and minification. Dev and build now share one bundler, builds are much faster, and tsconfig \`paths\` work without a plugin. Vite 8 needs Node 20.19+ or 22.12+.
 
 ### Dependencies
 Before adding a package, check its size and whether it tree-shakes (ESM, \`sideEffects: false\`). Prefer platform APIs: \`Intl.DateTimeFormat\` and \`Intl.NumberFormat\` instead of formatting libraries, \`fetch\` instead of HTTP clients, \`structuredClone\` instead of deep-clone utilities.

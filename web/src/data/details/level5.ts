@@ -107,7 +107,7 @@ const selected = params.get('selected')
 
 ### Why this bites
 
-Typical code: \`<AppContext.Provider value={{ user, theme, cart, setCart }}>\`. Two problems:
+Typical code: \`<AppContext value={{ user, theme, cart, setCart }}>\`. Two problems:
 
 - The object literal is **new on every render** of the provider, so all consumers re-render whenever the provider re-renders, even if nothing changed.
 - Unrelated data shares one context, so a cart update re-renders every component that only wanted the theme.
@@ -137,9 +137,9 @@ function AppProviderBad({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   return (
-    <AppContext.Provider value={{ cart, setCart, theme, setTheme }}>
+    <AppContext value={{ cart, setCart, theme, setTheme }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   )
 }
 
@@ -162,9 +162,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     remove: (id) => dispatch({ type: 'remove', id }),
   }), [])
   return (
-    <CartActionsContext.Provider value={actions}>
-      <CartStateContext.Provider value={cart}>{children}</CartStateContext.Provider>
-    </CartActionsContext.Provider>
+    <CartActionsContext value={actions}>
+      <CartStateContext value={cart}>{children}</CartStateContext>
+    </CartActionsContext>
   )
 }
 
@@ -201,9 +201,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     dismiss: (id: string) => dispatch({ type: 'dismiss', id }),
   }), [])
   return (
-    <ActionsCtx.Provider value={actions}>
-      <ListCtx.Provider value={list}>{children}</ListCtx.Provider>
-    </ActionsCtx.Provider>
+    <ActionsCtx value={actions}>
+      <ListCtx value={list}>{children}</ListCtx>
+    </ActionsCtx>
   )
 }
 
@@ -391,11 +391,15 @@ export const useEditorActions = () =>
 - \`atom(0)\` creates a primitive atom with an initial value. \`useAtom(a)\` returns \`[value, set]\`, like \`useState\` but shareable. \`useAtomValue\` and \`useSetAtom\` split reading and writing so write-only components don't re-render.
 - \`atom((get) => get(priceAtom) * get(qtyAtom))\` is a **derived atom**: it tracks its dependencies automatically and recomputes only when they change. This forms a dependency graph, similar to a spreadsheet.
 - Writable derived atoms take a write function: \`atom(null, (get, set, arg) => ...)\` act like actions.
-- Async atoms return promises and integrate with Suspense.
+- Async atoms return promises and integrate with Suspense. To read one without suspending, wrap it with \`unwrap\` from \`jotai/utils\` (Jotai 3 removed \`loadable\`).
 
 ### Where it shines
 
-Highly interconnected UI state: design tools, diagram editors, spreadsheets, form builders, where thousands of items each need their own state and derived values. \`atomFamily\`-style patterns (or atoms created per item and stored in a map) give each item its own subscription, so editing one node re-renders only that node.
+Highly interconnected UI state: design tools, diagram editors, spreadsheets, form builders, where thousands of items each need their own state and derived values. \`atomFamily\`-style patterns (or atoms created per item and stored in a map) give each item its own subscription, so editing one node re-renders only that node. In Jotai 3, \`atomFamily\` lives in the separate \`jotai-family\` package: \`import { atomFamily } from 'jotai-family'\`.
+
+### Jotai 3 notes
+
+Jotai 3 is ESM-only. Core \`atom\`, \`useAtom\`, \`useAtomValue\` and \`useSetAtom\` are unchanged. Removed: \`loadable\` (use \`unwrap\`), \`setSelf\` (use \`onMount\` or jotai-effect) and the \`delay\` option; \`atomFamily\` moved to \`jotai-family\`.
 
 ### Scoping
 
@@ -678,8 +682,8 @@ export default [
     ],
     exercise: {
       task: 'Restructure a small app (e.g. your catalog app) into `app/`, `shared/`, `features/` and `pages/`. Give each feature an `index.ts` and add ESLint rules forbidding deep feature imports and shared-to-feature imports. Introduce a violation and confirm lint fails.',
-      hint: 'Set a `@/` path alias in both `tsconfig` (`paths`) and Vite (`resolve.alias`) first.',
-      solution: `1. Add aliases: \`"paths": { "@/*": ["./src/*"] }\` and the Vite alias.
+      hint: 'Set a `@/` path alias in `tsconfig` (`paths`) first. Vite 8 reads tsconfig `paths` natively; older Vite versions also need `resolve.alias`.',
+      solution: `1. Add aliases: \`"paths": { "@/*": ["./src/*"] }\` (Vite 8 picks it up; on older Vite add the matching \`resolve.alias\`).
 2. Move files feature by feature; create \`features/<name>/index.ts\` exporting only what pages use.
 3. Add the two \`no-restricted-imports\` blocks from the example.
 4. Write \`import { CartLine } from '@/features/cart/components/CartLine'\` in a page and run \`npx eslint src\`:

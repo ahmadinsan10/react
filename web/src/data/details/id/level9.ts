@@ -852,7 +852,25 @@ export function RelativeTime({ iso }: { iso: string }) {
   },
 
   compiler: {
-    explanation: `**React Compiler** adalah tool build-time (plugin Babel, dengan integrasi untuk Vite, Next.js, dan bundler lain) yang menulis ulang komponen dan hook-mu supaya otomatis ter-memoize. Rilis stabil 1.0-nya keluar di akhir 2025. Cek dokumentasi terbaru untuk setup yang tepat di toolchain-mu.
+    explanation: `**React Compiler** adalah tool build-time (plugin Babel, dengan integrasi untuk Vite, Next.js, dan bundler lain) yang menulis ulang komponen dan hook-mu supaya otomatis ter-memoize. Rilis stabil 1.0-nya keluar di Oktober 2025.
+
+### Setup saat ini
+
+\`\`\`ts
+// vite.config.ts (@vitejs/plugin-react 6+; the old react({ babel: … }) option was removed)
+// npm install -D @rolldown/plugin-babel @babel/core babel-plugin-react-compiler
+import { defineConfig } from 'vite'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+
+export default defineConfig({
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+})
+\`\`\`
+
+- **Next.js**: \`reactCompiler: true\` di \`next.config.ts\`.
+- **Port Rust eksperimental**: \`react({ compiler: true })\` di Vite (butuh peer opsional \`oxc-transform-react\`), atau \`experimental.turbopackRustReactCompiler: true\` di Next.js 16.3+. Cepat, tapi masih eksperimental.
+- **Lint**: \`eslint-plugin-react-hooks@latest\` dengan preset \`recommended-latest\` sudah mencakup aturan compiler.
 
 ### Masalah yang diselesaikan
 
@@ -926,8 +944,10 @@ function InvoiceListPlain({ invoices, onSelect }: Props) {
   return overdue.map((i) => <InvoiceRow key={i.id} invoice={i} onClick={() => onSelect(i.id)} />)
 }
 
-// vite.config.ts (check current docs for the recommended plugin setup)
-// react({ babel: { plugins: ['babel-plugin-react-compiler'] } })`,
+// vite.config.ts (@vitejs/plugin-react 6+)
+// import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+// import babel from '@rolldown/plugin-babel'
+// plugins: [react(), babel({ presets: [reactCompilerPreset()] })]`,
         note: 'Compiler meng-cache array hasil filter, arrow function, dan elemen JSX berdasarkan apa yang menjadi dependency-nya. Pastikan `today()` tetap deterministik dalam satu render.',
       },
     ],

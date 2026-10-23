@@ -284,7 +284,7 @@ type State =
 - In React 19, \`ref\` is a normal prop — no more forwardRef`),
       t('headless', 'Headless UI', `**Radix UI** and **React Aria** give you behaviour and accessibility without styles. **shadcn/ui** copies styled Radix components into your codebase so you own them.`),
       t('a11y', 'Accessibility in depth', `Semantic HTML first; ARIA only when no native element fits. Every interactive element must be keyboard reachable and operable, have a visible focus style, and an accessible name. Dialogs trap focus and restore it on close. Test with a screen reader (NVDA on Windows) and follow the WAI-ARIA Authoring Practices.`),
-      t('animation', 'Animation', `CSS transitions for simple cases, **Motion** for complex/layout animation, the View Transitions API for page transitions. Always respect \`prefers-reduced-motion\`.`),
+      t('animation', 'Animation', `CSS transitions for simple cases, **Motion** for complex/layout animation, React's stable \`<ViewTransition>\` (React 19.3) for animating Transition updates: enter/exit, shared elements and Suspense reveals. Always respect \`prefers-reduced-motion\`.`),
       t('storybook', 'Storybook', `Develop components in isolation, document every state, and run accessibility and interaction tests per story.`),
     ],
     projects: [
@@ -314,9 +314,9 @@ type State =
     checkpoint: 'You can refactor a component\'s internals without breaking tests, and tests fail when behaviour breaks.',
     topics: [
       t('trophy', 'The testing trophy', `Static checks (TypeScript, ESLint) at the base, a few unit tests, **mostly integration tests**, a handful of end-to-end tests. Integration tests give the most confidence per minute spent.`),
-      t('vitest', 'Vitest', `Fast, Vite-native test runner with a Jest-compatible API. Use it for pure logic (reducers, formatters, validation) and for running component tests.`),
+      t('vitest', 'Vitest', `Fast, Vite-native test runner with a Jest-compatible API. Use it for pure logic (reducers, formatters, validation) and for running component tests. Vitest 5 clears mocks before each test and fails un-awaited async assertions.`),
       t('rtl', 'React Testing Library', `Test what users see and do. Query by **role** and **label** (\`getByRole('button', { name: /save/i })\`), interact with \`user-event\`, wait with \`findBy*\`. Never assert on state variables or internal methods.`),
-      t('msw', 'Mock Service Worker', `Mock the network at the HTTP boundary instead of mocking \`fetch\` or your hooks. The same handlers work in tests, Storybook and the browser.`),
+      t('msw', 'Mock Service Worker', `Mock the network at the HTTP boundary instead of mocking \`fetch\` or your hooks. The same handlers work in tests, Storybook and the browser. MSW 3 is ESM-only and renamed \`onUnhandledRequest\` to \`onUnhandledFrame\`.`),
       t('playwright', 'Playwright E2E', `Real browsers, auto-waiting, traces. Cover critical flows (signup, checkout). Add \`@axe-core/playwright\` for automated accessibility checks.`),
       t('what-not', 'What not to test', `Implementation details, third-party libraries, and giant snapshot tests nobody reads. If a refactor that keeps behaviour identical breaks a test, that test was testing implementation.`),
     ],
@@ -352,7 +352,7 @@ type State =
 - Manual \`memo\`/\`useMemo\` only where the compiler can't help and profiling proves it`),
       t('concurrent', 'Concurrent features', `\`useTransition\` marks an update as non-urgent so typing stays responsive while a heavy list re-renders. \`useDeferredValue\` lets part of the UI lag behind a fast-changing value.`),
       t('lists', 'Virtualization', `Rendering 10,000 rows creates 10,000 DOM nodes. Virtualization (TanStack Virtual) only renders the rows in view plus a small overscan.`),
-      t('bundle', 'Bundle & network', `Code-split with \`lazy\` + \`Suspense\`, split by route, analyse the bundle, avoid heavy dependencies. Optimise images (sizes, modern formats, lazy loading) and fonts. Move CPU-heavy work to Web Workers.`),
+      t('bundle', 'Bundle & network', `Code-split with \`lazy\` + \`Suspense\`, split by route, analyse the bundle, avoid heavy dependencies. Optimise images (sizes, modern formats, lazy loading) and fonts. Move CPU-heavy work to Web Workers. Vite 8 bundles with Rolldown for both dev and build.`),
     ],
     projects: [
       p('Data-heavy Dashboard', '10,000+ rows, charts and live data — then make it fast.', [
@@ -385,7 +385,7 @@ type State =
       t('hook-storage', 'How hooks are stored', `A fiber's hooks are a **linked list** in call order. On re-render, React walks the list in the same order to find each hook's state. Calling a hook conditionally shifts every later hook — that's why the Rules of Hooks exist.`),
       t('suspense', 'Suspense', `When a component reads data that isn't ready (via \`use\` or a Suspense-enabled library), it **suspends**; React shows the nearest boundary's fallback and retries when the promise resolves.`),
       t('hydration', 'Hydration', `SSR sends HTML; **hydration** attaches React to it. If client output differs from the server HTML you get a mismatch. Streaming SSR and **selective hydration** let parts of the page become interactive independently.`),
-      t('compiler', 'The React Compiler', `A build-time Babel plugin that analyses components and inserts fine-grained memoization. It relies on your code following the rules: pure render, no mutation of props/state.`),
+      t('compiler', 'The React Compiler', `A build-time Babel plugin (stable 1.0) that analyses components and inserts fine-grained memoization. In Vite, add it with \`reactCompilerPreset\` + \`@rolldown/plugin-babel\`; in Next.js, \`reactCompiler: true\`. It relies on your code following the rules: pure render, no mutation of props/state.`),
     ],
     projects: [
       p('Build Your Own React', 'Follow pomb.us/build-your-own-react and extend it.', [
@@ -407,18 +407,18 @@ type State =
     id: 10,
     slug: 'server-components-nextjs',
     title: 'Server Components & Next.js',
-    tagline: 'Full-stack React. Check current Next.js versions before starting.',
+    tagline: 'Full-stack React with Next.js 16.4. Versions move fast: check the release notes.',
     phase: 'Expert',
     weeks: 5,
     vizIds: ['rendering-strategies', 'rsc-boundary'],
     checkpoint: 'For any piece of UI you can say whether it renders on the server or client, whether it is cached (\'use cache\') or dynamic, and which tag invalidates it.',
     topics: [
-      t('strategies', 'Rendering strategies', `**CSR** renders in the browser. **SSR** renders HTML per request. **SSG** renders at build time. **Streaming** sends HTML in chunks as data resolves. **Partial Prerendering** serves a static shell instantly and streams dynamic holes.`),
-      t('rsc', 'Server Components', `Server Components run only on the server: they can read databases directly and ship **zero JS**. Client Components (\`'use client'\`) are needed for state, effects and event handlers. Props crossing the boundary must be serializable. Pass Server Components *into* Client Components as \`children\`.`),
+      t('strategies', 'Rendering strategies', `**CSR** renders in the browser. **SSR** renders HTML per request. **SSG** renders at build time. **Streaming** sends HTML in chunks as data resolves. **Partial Prerendering** serves a static shell instantly and streams dynamic holes (Cache Components, on by default in new Next.js apps since 16.4).`),
+      t('rsc', 'Server Components', `Server Components run only on the server: they can read databases directly and ship **zero JS**. Client Components (\`'use client'\`) are needed for state, effects and event handlers. Props crossing the boundary must be serializable. Pass Server Components *into* Client Components as \`children\`. Since React 19.3 a Server Component can render \`<Context value>\` directly.`),
       t('actions', 'Server Functions', `\`'use server'\` functions can be called from the client — which means they are **public HTTP endpoints**. Validate input and check authorization in every one.`),
-      t('app-router', 'Next.js App Router', `Layouts, \`loading\`/\`error\`/\`not-found\` files, route groups, parallel & intercepting routes, metadata, \`Image\` and \`Font\`, and \`proxy.ts\` (called \`middleware.ts\` before Next.js 16).`),
-      t('cache-components', 'Caching with Cache Components', `In current Next.js everything is **dynamic by default**. Opt in with the \`'use cache'\` directive, set lifetime with \`cacheLife\`, tag entries with \`cacheTag\`, and invalidate with \`revalidateTag\`/\`updateTag\` after mutations. Wrap dynamic parts in \`<Suspense>\` so the static shell streams first. Older code uses the implicit four-cache model — recognise it, but learn the explicit one.`),
-      t('data-layer', 'Data layer & auth', `Use an ORM (Prisma or Drizzle) with Postgres and an auth library (Auth.js or Better Auth). Alternatives to Next.js: React Router framework mode and TanStack Start.`),
+      t('app-router', 'Next.js App Router', `Layouts, \`loading\`/\`error\`/\`not-found\` files, route groups, parallel & intercepting routes, metadata, \`Image\` and \`Font\`, and \`proxy.ts\` (called \`middleware.ts\` before Next.js 16; Node.js runtime by default, \`middleware.ts\` is deprecated).`),
+      t('cache-components', 'Caching with Cache Components', `Enable with \`cacheComponents: true\` (default in new \`create-next-app\` projects since 16.4). Then everything is **dynamic by default**. Opt in with the \`'use cache'\` directive, set lifetime with \`cacheLife\`, tag entries with \`cacheTag\`, and invalidate with \`revalidateTag\`/\`updateTag\` after mutations. Wrap dynamic parts in \`<Suspense>\` so the static shell streams first. Older code uses the implicit four-cache model — recognise it, but learn the explicit one.`),
+      t('data-layer', 'Data layer & auth', `Use an ORM (Prisma or Drizzle) with Postgres and an auth library (Auth.js or Better Auth). Alternatives to Next.js: React Router v8 framework mode and TanStack Start.`),
     ],
     projects: [
       p('Full-stack Board', 'A Trello-like board or a blog CMS in Next.js.', [
@@ -448,7 +448,7 @@ type State =
       t('quality', 'Code quality', `ESLint flat config shared across the monorepo (react-hooks with compiler rules, jsx-a11y), Prettier or Biome, strict TypeScript, Husky + lint-staged.`),
       t('cicd', 'CI/CD', `Lint → typecheck → test → build on every PR, with **preview deployments** so reviewers can click through changes.`),
       t('errors', 'Errors & observability', `Error boundaries at route and widget level, reporting with Sentry, Real User Monitoring of Web Vitals, feature flags for safe rollouts.`),
-      t('security', 'Security', `React escapes text by default; \`dangerouslySetInnerHTML\` bypasses that — sanitize with DOMPurify if you must use it. Add a Content Security Policy, never put secrets in client bundles, and audit dependencies (Renovate/Dependabot).`),
+      t('security', 'Security', `React escapes text by default; \`dangerouslySetInnerHTML\` bypasses that — sanitize with DOMPurify if you must use it. Add a Content Security Policy (React 19.3 supports Trusted Types), never put secrets in client bundles, and audit dependencies (Renovate/Dependabot).`),
       t('i18n', 'Internationalization', `react-intl or i18next, ICU plural rules, \`Intl\` for dates/numbers, and right-to-left layout support.`),
       t('monorepo', 'Monorepos', `pnpm workspaces + Turborepo to share a UI package and configs between apps with cached builds.`),
       t('pwa', 'PWA & offline', `Service workers and caching strategies for offline-capable apps.`, true),
@@ -486,7 +486,7 @@ type State =
       t('teach', 'Teach', `Write posts, give meetup talks, mentor juniors. Explaining exposes gaps in your own understanding.`),
       t('review', 'Code review', `Review for correctness, accessibility, performance and maintainability — not just style. Be specific and kind.`),
       t('adr', 'Architecture decisions', `Record significant choices (state library, rendering strategy, styling) as ADRs: context, options, decision, consequences.`),
-      t('current', 'Stay current', `Follow the React blog, RFCs, React Conf talks and This Week in React.`),
+      t('current', 'Stay current', `Follow the React blog, RFCs, React Conf talks and This Week in React. React is governed by the React Foundation (Linux Foundation) since Feb 2026; read release notes before upgrading.`),
       t('interview', 'Interview depth', `Live-code an autocomplete, modal, infinite scroll and data table while explaining trade-offs out loud.`),
     ],
     projects: [

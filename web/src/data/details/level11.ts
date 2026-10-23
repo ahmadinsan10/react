@@ -390,6 +390,9 @@ When you write \`{comment.body}\` in JSX, React sets it as a text node, so \`<sc
 ### Content Security Policy
 CSP is an HTTP header telling the browser which sources may run scripts, load styles, frames and so on. A strict policy based on **nonces** (a random value generated per request, added to allowed script tags) means that even if an attacker injects markup, the browser refuses to run their script. In Next.js you generate the nonce in \`proxy.ts\` and set the header there. Nonces force dynamic rendering, so check the Next.js CSP guide for the current trade-offs. Start with \`Content-Security-Policy-Report-Only\` to find violations before enforcing.
 
+### Trusted Types
+The CSP directive \`require-trusted-types-for 'script'\` makes the browser reject plain strings passed to dangerous sinks like \`innerHTML\`; only \`TrustedHTML\` (created by a policy you control, e.g. one that runs DOMPurify) is accepted. Since React 19.3, React passes \`TrustedHTML\`, \`TrustedScript\` and \`TrustedScriptURL\` values through to the DOM, so \`dangerouslySetInnerHTML={{ __html: policy.createHTML(html) }}\` works under that policy and every raw-HTML path is forced through your sanitizer.
+
 ### Secrets
 Everything in a client bundle is public. Vite exposes \`import.meta.env.VITE_*\` and Next.js exposes \`NEXT_PUBLIC_*\` to the browser *by design*. Private keys belong only in server code: route handlers, Server Actions, Server Components. Use the \`server-only\` package so importing a secret-reading module from a client component fails the build. If a secret leaks, **rotate it**. Deleting the commit is not enough.
 
@@ -420,7 +423,7 @@ export function Article({ html }: { html: string }) {
       },
       {
         title: 'Nonce-based CSP in Next.js proxy.ts',
-        code: `// proxy.ts (Next.js 16; called middleware.ts in earlier versions)
+        code: `// proxy.ts (Next.js 16+, Node.js runtime by default; middleware.ts is deprecated)
 import { NextResponse, type NextRequest } from 'next/server'
 
 export function proxy(request: NextRequest) {

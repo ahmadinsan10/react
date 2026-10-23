@@ -390,6 +390,9 @@ Saat kamu menulis \`{comment.body}\` di JSX, React memasangnya sebagai text node
 ### Content Security Policy
 CSP adalah HTTP header yang memberi tahu browser sumber mana saja yang boleh menjalankan script, memuat style, frame, dan seterusnya. Kebijakan ketat berbasis **nonce** (nilai acak yang dibuat per request dan ditambahkan ke tag script yang diizinkan) berarti meskipun penyerang berhasil menyisipkan markup, browser menolak menjalankan script mereka. Di Next.js kamu membuat nonce di \`proxy.ts\` dan memasang header-nya di sana. Nonce memaksa dynamic rendering, jadi cek panduan CSP Next.js untuk trade-off terbarunya. Mulai dengan \`Content-Security-Policy-Report-Only\` untuk menemukan pelanggaran sebelum diberlakukan.
 
+### Trusted Types
+Directive CSP \`require-trusted-types-for 'script'\` membuat browser menolak string biasa yang dioper ke sink berbahaya seperti \`innerHTML\`; hanya \`TrustedHTML\` (dibuat oleh policy yang kamu kendalikan, misalnya yang menjalankan DOMPurify) yang diterima. Sejak React 19.3, React meneruskan nilai \`TrustedHTML\`, \`TrustedScript\`, dan \`TrustedScriptURL\` apa adanya ke DOM, jadi \`dangerouslySetInnerHTML={{ __html: policy.createHTML(html) }}\` tetap jalan di bawah policy itu, dan setiap jalur HTML mentah dipaksa lewat sanitizer-mu.
+
 ### Secret
 Semua yang ada di bundle client bersifat publik. Vite mengekspos \`import.meta.env.VITE_*\` dan Next.js mengekspos \`NEXT_PUBLIC_*\` ke browser *memang sengaja begitu*. Private key hanya boleh ada di kode server: route handler, Server Action, Server Component. Pakai package \`server-only\` supaya import modul yang membaca secret dari client component membuat build gagal. Kalau secret bocor, **rotasi**. Menghapus commit-nya saja tidak cukup.
 
@@ -420,7 +423,7 @@ export function Article({ html }: { html: string }) {
       },
       {
         title: 'CSP berbasis nonce di proxy.ts Next.js',
-        code: `// proxy.ts (Next.js 16; called middleware.ts in earlier versions)
+        code: `// proxy.ts (Next.js 16+, Node.js runtime by default; middleware.ts is deprecated)
 import { NextResponse, type NextRequest } from 'next/server'
 
 export function proxy(request: NextRequest) {

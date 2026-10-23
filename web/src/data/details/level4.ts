@@ -23,6 +23,10 @@ With \`createBrowserRouter\`, each route can have a \`loader\` that runs **befor
 
 Protect routes in a loader (redirect to \`/login?redirectTo=...\` when there is no session) or in a layout route that checks auth. Remember this is UX only: the server must authorise every request. Use \`lazy\` on routes to code-split each page so the initial bundle only contains what the first screen needs.
 
+### React Router v8 (2026)
+
+The examples use React Router v8 (June 2026). The \`react-router-dom\` package was **removed**: import everything from \`react-router\` (DOM-specific bits from \`react-router/dom\`). It is ESM-only and needs Node 22.22+, React 19.2.7+ and Vite 7+. Former future flags are now defaults: **middleware is on by default**, route modules are split by default, and meta functions receive \`loaderData\` (the old \`data\` param is gone). It has three modes: **declarative** (a simple client router with \`<Routes>\`), **data mode** (\`createBrowserRouter\` with loaders and actions, as here) and **framework mode** (Remix's successor, with file-based routes and SSR). v6 and Remix v2 are end-of-life.
+
 ### When to choose TanStack Router
 
 It offers fully type-safe paths, params and validated search params at the cost of a different mental model. Either is fine; what matters is understanding nested layouts, URL state and loading data before render.`,
@@ -410,7 +414,7 @@ function Orders() {
 
 ### React Hook Form + Zod
 
-React Hook Form (RHF) keeps inputs **uncontrolled** via \`register\`, so typing doesn't re-render the whole form: it is fast even with large forms. Pair it with \`zodResolver(schema)\` so one Zod schema defines both validation and the TypeScript type of the values. Key APIs: \`useForm<T>({ resolver, defaultValues, mode })\`, \`register\`, \`handleSubmit\`, \`formState: { errors, isSubmitting, isDirty }\`, \`setError\` for server errors, \`reset\` after loading server data, and \`Controller\` for non-native inputs (date pickers, comboboxes). Always provide \`defaultValues\`.
+React Hook Form (RHF) keeps inputs **uncontrolled** via \`register\`, so typing doesn't re-render the whole form: it is fast even with large forms. Pair it with \`zodResolver(schema)\` so one Zod schema defines both validation and the TypeScript type of the values (Zod 4 style: \`z.email()\`, \`z.url()\` and \`{ error: '...' }\` for messages). Key APIs: \`useForm<T>({ resolver, defaultValues, mode })\`, \`register\`, \`handleSubmit\`, \`formState: { errors, isSubmitting, isDirty }\`, \`setError\` for server errors, \`reset\` after loading server data, and \`Controller\` for non-native inputs (date pickers, comboboxes). Always provide \`defaultValues\`.
 
 ### React 19 Actions
 
@@ -433,9 +437,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 const ProjectSchema = z.object({
-  name: z.string().trim().min(3, 'At least 3 characters'),
-  slug: z.string().regex(/^[a-z0-9-]+$/, 'Lowercase letters, digits and dashes'),
-  budget: z.coerce.number().positive('Must be positive'),
+  name: z.string().trim().min(3, { error: 'At least 3 characters' }),
+  slug: z.string().regex(/^[a-z0-9-]+$/, { error: 'Lowercase letters, digits and dashes' }),
+  budget: z.coerce.number().positive({ error: 'Must be positive' }),
 })
 type ProjectInput = z.infer<typeof ProjectSchema>
 
@@ -477,7 +481,7 @@ import { useFormStatus } from 'react-dom'
 type State = { ok: boolean; errors?: Partial<Record<'email', string>>; message?: string }
 
 async function subscribe(_prev: State, formData: FormData): Promise<State> {
-  const parsed = z.object({ email: z.string().email() }).safeParse({ email: formData.get('email') })
+  const parsed = z.object({ email: z.email() }).safeParse({ email: formData.get('email') })
   if (!parsed.success) return { ok: false, errors: { email: 'Enter a valid email' } }
   const res = await api.subscribe(parsed.data.email)
   return res.ok ? { ok: true, message: 'Check your inbox!' } : { ok: false, message: 'Try again later' }
@@ -520,7 +524,7 @@ export function NewsletterForm() {
       solution: `\`\`\`tsx
 const ProfileSchema = z.object({
   displayName: z.string().trim().min(2).max(40),
-  website: z.string().url().or(z.literal('')),
+  website: z.url().or(z.literal('')),
 })
 type Profile = z.infer<typeof ProfileSchema>
 

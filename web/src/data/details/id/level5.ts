@@ -107,7 +107,7 @@ const selected = params.get('selected')
 
 ### Kenapa ini sering menjebak
 
-Kode yang umum: \`<AppContext.Provider value={{ user, theme, cart, setCart }}>\`. Ada dua masalah:
+Kode yang umum: \`<AppContext value={{ user, theme, cart, setCart }}>\`. Ada dua masalah:
 
 - Object literal itu **baru di setiap render** provider, jadi semua consumer ikut re-render setiap kali provider re-render, walaupun tidak ada yang berubah.
 - Data yang tidak berkaitan berbagi satu context, sehingga update keranjang me-render ulang setiap component yang sebenarnya cuma butuh tema.
@@ -137,9 +137,9 @@ function AppProviderBad({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   return (
-    <AppContext.Provider value={{ cart, setCart, theme, setTheme }}>
+    <AppContext value={{ cart, setCart, theme, setTheme }}>
       {children}
-    </AppContext.Provider>
+    </AppContext>
   )
 }
 
@@ -162,9 +162,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     remove: (id) => dispatch({ type: 'remove', id }),
   }), [])
   return (
-    <CartActionsContext.Provider value={actions}>
-      <CartStateContext.Provider value={cart}>{children}</CartStateContext.Provider>
-    </CartActionsContext.Provider>
+    <CartActionsContext value={actions}>
+      <CartStateContext value={cart}>{children}</CartStateContext>
+    </CartActionsContext>
   )
 }
 
@@ -201,9 +201,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     dismiss: (id: string) => dispatch({ type: 'dismiss', id }),
   }), [])
   return (
-    <ActionsCtx.Provider value={actions}>
-      <ListCtx.Provider value={list}>{children}</ListCtx.Provider>
-    </ActionsCtx.Provider>
+    <ActionsCtx value={actions}>
+      <ListCtx value={list}>{children}</ListCtx>
+    </ActionsCtx>
   )
 }
 
@@ -391,11 +391,15 @@ export const useEditorActions = () =>
 - \`atom(0)\` membuat atom primitif dengan nilai awal. \`useAtom(a)\` mengembalikan \`[value, set]\`, mirip \`useState\` tapi bisa dipakai bersama. \`useAtomValue\` dan \`useSetAtom\` memisahkan baca dan tulis, sehingga component yang hanya menulis tidak ikut re-render.
 - \`atom((get) => get(priceAtom) * get(qtyAtom))\` adalah **atom turunan**: dia melacak dependency-nya secara otomatis dan hanya menghitung ulang saat dependency itu berubah. Hasilnya adalah graf dependency, mirip spreadsheet.
 - Atom turunan yang bisa ditulis menerima fungsi write: \`atom(null, (get, set, arg) => ...)\` berperan seperti action.
-- Atom async mengembalikan promise dan terintegrasi dengan Suspense.
+- Atom async mengembalikan promise dan terintegrasi dengan Suspense. Untuk membacanya tanpa suspend, bungkus dengan \`unwrap\` dari \`jotai/utils\` (Jotai 3 menghapus \`loadable\`).
 
 ### Di mana Jotai unggul
 
-State UI yang sangat saling terhubung: design tool, editor diagram, spreadsheet, form builder, di mana ribuan item masing-masing butuh state dan nilai turunannya sendiri. Pola ala \`atomFamily\` (atau atom yang dibuat per item lalu disimpan di map) memberi setiap item subscription-nya sendiri, jadi mengedit satu node hanya me-render ulang node itu.
+State UI yang sangat saling terhubung: design tool, editor diagram, spreadsheet, form builder, di mana ribuan item masing-masing butuh state dan nilai turunannya sendiri. Pola ala \`atomFamily\` (atau atom yang dibuat per item lalu disimpan di map) memberi setiap item subscription-nya sendiri, jadi mengedit satu node hanya me-render ulang node itu. Di Jotai 3, \`atomFamily\` pindah ke package terpisah \`jotai-family\`: \`import { atomFamily } from 'jotai-family'\`.
+
+### Catatan Jotai 3
+
+Jotai 3 hanya ESM. API inti \`atom\`, \`useAtom\`, \`useAtomValue\`, dan \`useSetAtom\` tidak berubah. Yang dihapus: \`loadable\` (pakai \`unwrap\`), \`setSelf\` (pakai \`onMount\` atau jotai-effect), dan opsi \`delay\`; \`atomFamily\` pindah ke \`jotai-family\`.
 
 ### Scoping
 
@@ -678,8 +682,8 @@ export default [
     ],
     exercise: {
       task: 'Susun ulang aplikasi kecil (misalnya aplikasi katalogmu) menjadi `app/`, `shared/`, `features/`, dan `pages/`. Beri setiap fitur sebuah `index.ts` dan tambahkan aturan ESLint yang melarang deep import ke fitur serta import dari shared ke fitur. Buat satu pelanggaran dan pastikan lint gagal.',
-      hint: 'Atur path alias `@/` dulu di `tsconfig` (`paths`) dan di Vite (`resolve.alias`).',
-      solution: `1. Tambahkan alias: \`"paths": { "@/*": ["./src/*"] }\` dan alias di Vite.
+      hint: 'Atur path alias `@/` dulu di `tsconfig` (`paths`). Vite 8 sudah membaca `paths` dari tsconfig secara bawaan; Vite versi lama masih butuh `resolve.alias`.',
+      solution: `1. Tambahkan alias: \`"paths": { "@/*": ["./src/*"] }\` (Vite 8 langsung membacanya; di Vite versi lama tambahkan \`resolve.alias\` yang sesuai).
 2. Pindahkan file per fitur; buat \`features/<name>/index.ts\` yang hanya meng-export apa yang dipakai page.
 3. Tambahkan dua blok \`no-restricted-imports\` dari contoh di atas.
 4. Tulis \`import { CartLine } from '@/features/cart/components/CartLine'\` di sebuah page lalu jalankan \`npx eslint src\`:

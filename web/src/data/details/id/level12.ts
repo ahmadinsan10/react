@@ -620,7 +620,10 @@ initial data on the interactive screens.
   },
 
   current: {
-    explanation: `React dan ekosistemnya bergerak cepat: React 19 membawa Actions, \`use\`, dan hook-hook form; React Compiler sudah mencapai rilis stabil; Next.js 16 membuat caching jadi eksplisit lewat Cache Components dan mengganti nama \`middleware.ts\` menjadi \`proxy.ts\`. Tetap up to date itu sebuah skill: tahu apa yang berubah, kenapa, dan apakah itu berpengaruh untuk codebase *kamu*.
+    explanation: `React dan ekosistemnya bergerak cepat: React 19 membawa Actions, \`use\`, dan hook-hook form; React Compiler sudah mencapai rilis stabil; Next.js 16 membuat caching jadi eksplisit lewat Cache Components dan mengganti nama \`middleware.ts\` menjadi \`proxy.ts\`; React 19.3 membuat \`<ViewTransition>\` dan Fragment ref jadi stabil; Next.js 16.4 mengaktifkan Cache Components secara default untuk aplikasi baru; React Router v8 menghapus \`react-router-dom\`. Versi bergerak cepat, jadi cek release notes sebelum memercayai tutorial apa pun (termasuk yang ini). Tetap up to date itu sebuah skill: tahu apa yang berubah, kenapa, dan apakah itu berpengaruh untuk codebase *kamu*.
+
+### Siapa yang menentukan arah React
+Sejak Februari 2026 React dikelola oleh **React Foundation**, bagian dari Linux Foundation, bukan lagi oleh satu perusahaan. Postingan rilis di react.dev tetap jadi sumber resmi untuk apa saja yang sudah dirilis.
 
 ### Utamakan sumber primer
 - **Blog dan dokumentasi React**: postingan rilis, panduan upgrade, dan penjelasan mendalam.
@@ -641,7 +644,7 @@ Newsletter seperti This Week in React merangkum ekosistem setiap minggu. Pakai u
 Untuk setiap hal baru, tanyakan: masalah apa yang diselesaikannya? Apakah kita punya masalah itu? Berapa biaya migrasinya? Apakah sudah stabil, atau masih experimental/canary? Banyak fitur dimulai di balik flag; adopsi di production biasanya sebaiknya menunggu rilis stabil.
 
 ### Kenali saran yang sudah usang
-Banyak konten online dibuat sebelum era App Router, React 19, atau Compiler. Tanda bahaya: \`getServerSideProps\` di kode App Router yang baru, \`forwardRef\` disajikan sebagai keharusan (React 19 meneruskan \`ref\` sebagai prop biasa), \`useMemo\` manual di mana-mana pada proyek yang sudah memakai compiler, \`middleware.ts\` di tutorial Next.js 16, atau asumsi soal caching fetch yang implisit. Selalu cek tanggal dan versinya.
+Banyak konten online dibuat sebelum era App Router, React 19, atau Compiler. Tanda bahaya: \`getServerSideProps\` di kode App Router yang baru, \`forwardRef\` disajikan sebagai keharusan (React 19 meneruskan \`ref\` sebagai prop biasa), \`useMemo\` manual di mana-mana pada proyek yang sudah memakai compiler, \`middleware.ts\` di tutorial Next.js 16, import \`react-router-dom\` (sudah dihapus di React Router v8), \`react({ babel: … })\` untuk compiler (sudah dihapus di \`@vitejs/plugin-react\` 6), \`onUnhandledRequest\` di MSW (sekarang \`onUnhandledFrame\`), \`<ViewTransition>\` yang disebut eksperimental, atau asumsi soal caching fetch yang implisit. Selalu cek tanggal dan versinya.
 
 ### Bagikan yang kamu pelajari
 Catatan internal singkat "apa yang berubah bulan ini" membantu tim, sekaligus memaksamu memahami perubahan cukup dalam untuk bisa merangkumnya.`,
@@ -673,7 +676,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = { matcher: ['/dashboard/:path*'] }`,
-        note: 'Nama file dan fungsinya berubah; konsepnya tidak. Cek panduan upgrade Next.js untuk API terkini yang persis dan codemod yang tersedia.',
+        note: 'Nama file dan fungsinya berubah; konsepnya tidak. Sejak Next.js 16.4, proxy.ts berjalan di runtime Node.js secara default dan middleware.ts sudah deprecated. Cek panduan upgrade untuk codemod-nya.',
       },
     ],
     realCase: {

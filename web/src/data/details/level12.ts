@@ -620,7 +620,10 @@ initial data on the interactive screens.
   },
 
   current: {
-    explanation: `React and its ecosystem move quickly: React 19 brought Actions, \`use\`, and the form hooks; the React Compiler reached a stable release; Next.js 16 made caching explicit with Cache Components and renamed \`middleware.ts\` to \`proxy.ts\`. Staying current is a skill: knowing what changed, why, and whether it matters for *your* codebase.
+    explanation: `React and its ecosystem move quickly: React 19 brought Actions, \`use\`, and the form hooks; the React Compiler reached a stable release; Next.js 16 made caching explicit with Cache Components and renamed \`middleware.ts\` to \`proxy.ts\`; React 19.3 made \`<ViewTransition>\` and Fragment refs stable; Next.js 16.4 turned Cache Components on by default for new apps; React Router v8 dropped \`react-router-dom\`. Versions move fast, so check the release notes before trusting any tutorial (including this one). Staying current is a skill: knowing what changed, why, and whether it matters for *your* codebase.
+
+### Who decides React's direction
+Since February 2026 React is governed by the **React Foundation**, part of the Linux Foundation, rather than by a single company. Release posts on react.dev remain the canonical source for what shipped.
 
 ### Primary sources first
 - **The React blog and docs**: release posts, upgrade guides, and deep explanations.
@@ -641,7 +644,7 @@ Newsletters such as This Week in React summarise the ecosystem weekly. Use them 
 For each new thing ask: what problem does it solve? Do we have that problem? What is the migration cost? Is it stable, or experimental/canary? Many features start behind flags; production adoption should usually wait for stable releases.
 
 ### Spot outdated advice
-Much online content predates the App Router, React 19, or the Compiler. Red flags: \`getServerSideProps\` in new App Router code, \`forwardRef\` presented as mandatory (React 19 passes \`ref\` as a regular prop), manual \`useMemo\` everywhere in compiler-enabled projects, \`middleware.ts\` in Next.js 16 tutorials, or assumptions about implicit fetch caching. Always check the date and the version.
+Much online content predates the App Router, React 19, or the Compiler. Red flags: \`getServerSideProps\` in new App Router code, \`forwardRef\` presented as mandatory (React 19 passes \`ref\` as a regular prop), manual \`useMemo\` everywhere in compiler-enabled projects, \`middleware.ts\` in Next.js 16 tutorials, \`react-router-dom\` imports (removed in React Router v8), \`react({ babel: … })\` for the compiler (removed in \`@vitejs/plugin-react\` 6), MSW's \`onUnhandledRequest\` (now \`onUnhandledFrame\`), \`<ViewTransition>\` described as experimental, or assumptions about implicit fetch caching. Always check the date and the version.
 
 ### Share what you learn
 A short internal "what changed this month" note helps the team and forces you to understand changes well enough to summarise them.`,
@@ -673,7 +676,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = { matcher: ['/dashboard/:path*'] }`,
-        note: 'The file and function names changed; the concept did not. Check the Next.js upgrade guide for the exact current API and the available codemod.',
+        note: 'The file and function names changed; the concept did not. Since Next.js 16.4 proxy.ts runs on the Node.js runtime by default and middleware.ts is deprecated. Check the upgrade guide for the codemod.',
       },
     ],
     realCase: {

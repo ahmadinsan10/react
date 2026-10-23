@@ -119,6 +119,12 @@ Utamakan mock di batas sistem (network dengan MSW, waktu, keacakan), bukan modul
 - **Type testing** dengan \`expectTypeOf\` untuk pembuat library.
 - **Projects** (workspace) untuk menjalankan environment node dan browser dalam satu perintah.
 
+### Perubahan Vitest 5 yang perlu kamu tahu
+- Butuh Node 22.12+ dan Vite 6.4+.
+- **Mock otomatis di-clear sebelum setiap test**, jadi riwayat pemanggilan tidak bocor antar-test (set return value di dalam test atau di \`beforeEach\`).
+- **Assertion async yang tidak di-\`await\` sekarang membuat test gagal** (misalnya lupa \`await expect(p).resolves...\`), dan \`expect.poll\` gagal saat timeout-nya habis.
+- File config tidak lagi dicari di folder induk.
+
 ### Tips performa yang umum
 Hindari import barrel yang besar di test, jaga \`setupFiles\` tetap ringan, dan pilih \`happy-dom\` kalau test kamu tidak bergantung pada perilaku khusus jsdom. Pakai \`--reporter=verbose\` atau \`--ui\` untuk melihat apa yang lambat.`,
     examples: [
@@ -198,10 +204,10 @@ import { afterAll, afterEach, beforeAll } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { server } from './server'
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => { cleanup(); server.resetHandlers() })
 afterAll(() => server.close())`,
-        note: 'onUnhandledRequest "error" membuat setiap panggilan network yang tidak di-mock langsung gagal dengan jelas, bukannya diam-diam menggantung.',
+        note: 'onUnhandledFrame "error" (sebelum MSW 3 bernama onUnhandledRequest) membuat setiap panggilan network yang tidak di-mock langsung gagal dengan jelas, bukannya diam-diam menggantung.',
       },
     ],
     realCase: {
@@ -404,11 +410,13 @@ test('tabs follow the APG keyboard pattern', async () => {
 - **Di Node** (Vitest, Jest), \`setupServer\` dari \`msw/node\` mem-patch modul pembuat request (\`http\`, \`https\`, \`fetch\` global) di level rendah untuk mencapai pencegatan yang sama.
 Definisi handler yang sama berlaku di keduanya, jadi satu set mock bisa melayani test, story, dan development offline.
 
-### API v2
-Handler dibuat dengan \`http.get\`, \`http.post\`, dan seterusnya (atau \`graphql.query\`). Resolver menerima \`{ request, params, cookies }\` dan mengembalikan \`Response\` standar Fetch API, biasanya lewat helper \`HttpResponse\`: \`HttpResponse.json(data, { status })\`, \`HttpResponse.text()\`, \`HttpResponse.error()\` untuk kegagalan network. Pakai \`delay()\` untuk mensimulasikan latensi. Membaca body memakai \`await request.json()\` standar.
+### API terkini (v2 dan v3)
+Handler dibuat dengan \`http.get\`, \`http.post\`, dan seterusnya (atau \`graphql.query\`). Resolver menerima \`{ request, params, cookies }\` dan mengembalikan \`Response\` standar Fetch API, biasanya lewat helper \`HttpResponse\`: \`HttpResponse.json(data, { status })\`, \`HttpResponse.text()\`, \`HttpResponse.error()\` untuk kegagalan network. Pakai \`delay()\` (dari \`msw/utils\` di MSW 3) untuk mensimulasikan latensi. Membaca body memakai \`await request.json()\` standar.
+
+**MSW 3** tidak mengubah \`http\`, \`HttpResponse\`, dan \`setupServer\`, tapi sekarang ESM-only dan butuh Node 22+; \`onUnhandledRequest\` berganti nama menjadi \`onUnhandledFrame\`, \`graphql\` pindah ke \`msw/graphql\`, helper seperti \`delay\` dan \`passthrough\` ada di \`msw/utils\`, dan \`worker.stop()\` mengembalikan Promise.
 
 ### Siklus hidup test
-1. \`server.listen({ onUnhandledRequest: 'error' })\` sebelum semua test, supaya request apa pun tanpa handler langsung menggagalkan test dengan jelas.
+1. \`server.listen({ onUnhandledFrame: 'error' })\` sebelum semua test, supaya request apa pun tanpa handler langsung menggagalkan test dengan jelas.
 2. \`server.use(...)\` di dalam test tertentu untuk **menimpa** handler khusus skenario itu (list kosong, 500, response lambat).
 3. \`server.resetHandlers()\` setelah setiap test menghapus penimpaan tersebut.
 4. \`server.close()\` setelah semuanya selesai.
@@ -429,7 +437,8 @@ Mock lama-lama melenceng dari API aslinya. Cara mengatasinya: generate tipe (ata
       {
         title: '✅ Handler bersama dan server Node',
         code: `// src/mocks/handlers.ts
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse } from 'msw'
+import { delay } from 'msw/utils'
 
 export const products = [
   { id: 'p1', name: 'Blue T-shirt', price: 20 },
@@ -502,14 +511,14 @@ test('shows an error and recovers on retry', async () => {
 
 **Akar masalah:** Hook-nya mulai mengirim \`?state=shipped\`, bukan \`?status=shipped\`. Hook yang di-mock tidak pernah membangun URL, jadi test tidak mungkin menyadarinya.
 
-**Perbaikan:** Tim beralih ke handler MSW yang memfilter berdasarkan parameter \`status\` seperti API aslinya, menghapus mock hook, dan men-set \`onUnhandledRequest: 'error'\`. Regression test-nya sekarang gagal kalau parameter yang salah dikirim, karena list-nya tidak akan terfilter.
+**Perbaikan:** Tim beralih ke handler MSW yang memfilter berdasarkan parameter \`status\` seperti API aslinya, menghapus mock hook, dan men-set \`onUnhandledFrame: 'error'\`. Regression test-nya sekarang gagal kalau parameter yang salah dikirim, karena list-nya tidak akan terfilter.
 
 **Pelajaran:** Mock di batas network supaya kode yang membangun request ikut teruji.`,
     },
     pitfalls: [
       'Lupa server.resetHandlers() setelah setiap test, sehingga override error bocor ke test-test berikutnya.',
-      'Membiarkan onUnhandledRequest di default warning, sehingga request yang tidak di-mock diam-diam menggantung atau malah mengakses network.',
-      'Memakai sintaks MSW v1 (rest.get, res(ctx.json())) dengan v2; API-nya sudah berubah menjadi http dan HttpResponse.',
+      'Membiarkan onUnhandledFrame (sebelum MSW 3: onUnhandledRequest) di default warning, sehingga request yang tidak di-mock diam-diam menggantung atau malah mengakses network.',
+      'Memakai sintaks MSW v1 (rest.get, res(ctx.json())) dengan v2/v3; API-nya sudah berubah menjadi http dan HttpResponse.',
       'Payload mock yang makin melenceng dari bentuk API asli; validasi dengan schema bersama atau generate dari OpenAPI.',
     ],
     exercise: {

@@ -121,7 +121,7 @@ function Page({ children }: { children: React.ReactNode }) {
 <Page><ResultList /></Page>
 \`\`\`
 
-Dengan React Compiler (stabil untuk React 19), komponen dan JSX di-memoize otomatis, jadi kamu jarang perlu menulis \`memo\`/\`useMemo\` secara manual. Untuk context, pisahkan nilai yang jarang berubah (tema) dari yang sering berubah (posisi kursor), atau pakai store dengan selector.`,
+Dengan React Compiler (stabil 1.0; di Vite aktifkan lewat \`reactCompilerPreset\` + \`@rolldown/plugin-babel\`, di Next.js lewat \`reactCompiler: true\`), komponen dan JSX di-memoize otomatis, jadi kamu jarang perlu menulis \`memo\`/\`useMemo\` secara manual. Untuk context, pisahkan nilai yang jarang berubah (tema) dari yang sering berubah (posisi kursor), atau pakai store dengan selector.`,
     realCase: {
       title: 'Dashboard yang tersendat di setiap ketikan',
       story: `**Situasi:** sebuah dashboard analitik menyimpan state input teks filter di komponen paling atas, \`Dashboard\`, yang juga me-render enam komponen chart yang berat.
@@ -829,7 +829,7 @@ Konsepnya: strategi-strategi ini berbeda dalam hal **di mana** HTML dihasilkan d
       'Putar **Streaming**. Shell datang hampir seketika sementara data lambat masih dimuat di server; sisanya mengalir masuk sebagai chunk dan di-hydrate terpisah.',
       'Putar **PPR**. Shell statis disajikan seperti SSG sementara data dinamis mulai diproses di server secara paralel, lalu mengalir ke lubang-lubangnya. Bandingkan FCP-nya dengan SSR dan kesegarannya dengan SSG.',
     ],
-    inCode: `Di Next.js 16 App Router, ini sebagian besar adalah pilihan soal data dan caching, bukan API yang terpisah:
+    inCode: `Di Next.js 16.4 App Router, ini sebagian besar adalah pilihan soal data dan caching, bukan API yang terpisah:
 
 \`\`\`tsx
 // Static by default when there is no dynamic data (SSG-like)
@@ -844,7 +844,7 @@ export default async function Page() {
 </Suspense>
 \`\`\`
 
-Dengan Cache Components aktif (\`cacheComponents: true\`), Next.js melakukan prerender pada shell statis dan men-stream bagian dinamis yang dibungkus Suspense (cookies, headers, fetch tanpa cache) saat request: itulah Partial Prerendering. Pakai \`'use cache'\` dengan \`cacheLife\`/\`cacheTag\` untuk membuat data statis, dan \`revalidateTag\` setelah mutation. CSR murni masih cocok untuk dashboard yang butuh login di mana SEO tidak penting.`,
+Dengan Cache Components aktif (\`cacheComponents: true\`, default di project \`create-next-app\` baru sejak 16.4), Next.js melakukan prerender pada shell statis dan men-stream bagian dinamis yang dibungkus Suspense (cookies, headers, fetch tanpa cache) saat request: itulah Partial Prerendering. Pakai \`'use cache'\` dengan \`cacheLife\`/\`cacheTag\` untuk membuat data statis, dan \`revalidateTag\` setelah mutation. CSR murni masih cocok untuk dashboard yang butuh login di mana SEO tidak penting.`,
     realCase: {
       title: 'Halaman produk yang menunggu widget paling lambatnya',
       story: `**Situasi:** halaman produk sebuah e-commerce di-render di server per request dan menunggu detail produk, harga, stok, rekomendasi dan ulasan sebelum mengembalikan HTML apa pun.
@@ -948,7 +948,7 @@ Cara lain XSS menyelinap melewati escaping React:
 - Menyerialisasi data ke dalam tag \`<script>\` untuk hydration tanpa meng-escape \`</script>\`.
 - Rendering markdown ke HTML di server tanpa sanitasi.
 
-Tambahkan Content-Security-Policy sebagai lapisan pertahanan tambahan, dan lakukan sanitasi di server kalau memungkinkan.`,
+Tambahkan Content-Security-Policy sebagai lapisan pertahanan tambahan (dengan \`require-trusted-types-for 'script'\`, React 19.3 menerima \`TrustedHTML\` dari policy sanitasimu), dan lakukan sanitasi di server kalau memungkinkan.`,
     realCase: {
       title: 'Chat support yang membocorkan session agen',
       story: `**Situasi:** widget help-desk mengizinkan pelanggan mengirim pesan dengan format sederhana. Untuk menampilkan bold dan link, dashboard agen me-render pesan dengan \`dangerouslySetInnerHTML\` dan regex buatan sendiri yang menghapus tag \`<script>\`.

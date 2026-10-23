@@ -753,7 +753,15 @@ Mengubah sebuah properti CSS bisa memicu hingga tiga tahap: **layout** (geometri
 - **CSS keyframes**: efek berulang atau bertahap (spinner, shimmer pada skeleton).
 - **Web Animations API** (\`element.animate()\`): kontrol imperatif, tetap ramah compositor.
 - **Motion** (dulu Framer Motion): deklaratif \`<motion.div animate>\`, fisika spring, gesture, **animasi exit** lewat \`AnimatePresence\` (normalnya React langsung menghapus elemen), dan **animasi layout** (prop \`layout\`) yang memakai teknik FLIP untuk menganimasikan perubahan posisi dan ukuran dengan transform.
-- **View Transitions API**: \`document.startViewTransition(() => update())\` mengambil snapshot state lama dan baru, lalu melakukan cross-fade atau morph di antaranya. Sangat cocok untuk pergantian route dan pengurutan ulang list. React punya component eksperimental \`<ViewTransition>\`; router seperti React Router menyediakan opsi \`viewTransition\`.
+- **View Transitions API**: \`document.startViewTransition(() => update())\` mengambil snapshot state lama dan baru, lalu melakukan cross-fade atau morph di antaranya. Sangat cocok untuk pergantian route dan pengurutan ulang list. Di React, pakai component \`<ViewTransition>\` yang sudah stabil (lihat di bawah); router seperti React Router menyediakan opsi \`viewTransition\`.
+
+### \`<ViewTransition>\` di React (stabil sejak React 19.3)
+Import dari \`'react'\` lalu bungkus bagian tree yang ingin dianimasikan. React yang memanggil API browser-nya untukmu dan menganimasikan empat kasus: **enter** (disisipkan), **exit** (dihapus), **update** (DOM-nya berubah), dan **share** (elemen dengan \`name\` yang sama hilang di satu tempat lalu muncul di tempat lain).
+- **Hanya update di dalam Transition yang dianimasikan**: \`startTransition\`, munculnya konten \`<Suspense>\`, atau \`useDeferredValue\`. \`setState\` biasa yang urgent langsung berubah tanpa animasi.
+- Bawaannya cross-fade. Kustomisasi dengan **View Transition Class** yang dioper ke \`enter\`, \`exit\`, \`update\`, \`share\`, atau \`default\` (misalnya \`default="none"\`, \`update="auto"\`), lalu targetkan di CSS dengan \`::view-transition-old(.cls)\` / \`::view-transition-new(.cls)\`; atau pakai callback \`onEnter\`/\`onExit\`/\`onShare\`/\`onUpdate\`.
+- \`addTransitionType('next')\` di dalam \`startTransition\` membuat \`enter\`/\`exit\` bisa menerima map seperti \`{ next: 'from-right', previous: 'from-left' }\`; CSS juga bisa mencocokkan \`:active-view-transition-type(next)\`.
+- Membungkus \`<Suspense>\` dengan \`<ViewTransition>\` menganimasikan peralihan fallback → konten.
+- Enter/exit hanya teranimasi kalau \`<ViewTransition>\` adalah hal pertama yang di-render di subtree-nya, sebelum node DOM apa pun. \`name\` untuk share harus unik di halaman.
 
 ### FLIP dalam satu paragraf
 First: ukur posisi lama elemen. Last: terapkan perubahan dan ukur posisi barunya. Invert: terapkan transform supaya elemen terlihat seolah masih di posisi lama. Play: animasikan transform kembali ke nol. Perubahan layout pun berubah jadi animasi transform yang murah. Prop \`layout\` milik Motion melakukan ini untukmu.
@@ -815,15 +823,37 @@ export function ToastStack({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id:
         note: 'AnimatePresence menahan item yang dihapus tetap ter-mount sampai animasi exit-nya selesai; layout membuat toast yang tersisa bergeser ke tempatnya dengan FLIP. Keduanya butuh key yang stabil.',
       },
       {
-        title: '✅ View Transition untuk pengurutan list',
-        code: `function sortBy(field: 'name' | 'price') {
-  const update = () => flushSync(() => setSort(field))
-  if (!document.startViewTransition) return update()
-  document.startViewTransition(update)
+        title: '✅ <ViewTransition> React: slide berarah dengan transition type',
+        code: `import { ViewTransition, addTransitionType, startTransition, useState } from 'react'
+
+export function Gallery({ photos }: { photos: Photo[] }) {
+  const [index, setIndex] = useState(0)
+  function go(dir: 'next' | 'previous') {
+    startTransition(() => {
+      addTransitionType(dir)
+      setIndex(i => (i + (dir === 'next' ? 1 : photos.length - 1)) % photos.length)
+    })
+  }
+  const photo = photos[index]
+  return (
+    <>
+      <ViewTransition
+        key={photo.id}
+        enter={{ next: 'from-right', previous: 'from-left' }}
+        exit={{ next: 'to-left', previous: 'to-right' }}
+      >
+        <img src={photo.src} alt={photo.alt} />
+      </ViewTransition>
+      <button onClick={() => go('previous')}>Previous</button>
+      <button onClick={() => go('next')}>Next</button>
+    </>
+  )
 }
-/* CSS: each row gets a unique name so it morphs to its new position
-   .row { view-transition-name: var(--vt-name); }  (set --vt-name per row in style) */`,
-        note: 'flushSync memastikan React meng-commit perubahan DOM di dalam callback transition, sehingga browser menangkap snapshot baru yang benar.',
+/* CSS: ::view-transition-new(.from-right) { animation: slide-in-right 250ms ease-out; }
+   @media (prefers-reduced-motion: reduce) {
+     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+   } */`,
+        note: 'Mengganti key membuat gambar lama exit dan gambar baru enter; hanya update di dalam startTransition yang dianimasikan. addTransitionType memilih class arahnya. Matikan animasinya saat prefers-reduced-motion aktif.',
       },
     ],
     realCase: {
@@ -988,7 +1018,8 @@ export default preview`,
       task: 'Tulis story untuk `UserCard` yang melakukan fetch ke `/api/users/:id`: Loading, Success, NotFound (404), dan ServerError (500), memakai handler MSW per story. Tambahkan fungsi play di story Success yang memastikan heading nama pengguna terlihat.',
       hint: 'Dengan msw-storybook-addon, taruh handler di parameters.msw.handlers. Pakai delay("infinite") untuk state loading.',
       solution: `\`\`\`tsx
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse } from 'msw'
+import { delay } from 'msw/utils'
 import { expect, within } from 'storybook/test'
 
 const meta = { component: UserCard, args: { id: '42' } } satisfies Meta<typeof UserCard>

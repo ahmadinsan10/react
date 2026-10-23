@@ -6,19 +6,19 @@ const details: Record<string, TopicDetail> = {
 
 ### Vite
 
-\`npm create vite@latest my-app -- --template react-ts\` scaffolds a project. Vite serves your source as native ES modules during development, so the server starts almost instantly and hot module replacement (HMR) updates only the changed module while preserving component state. For production it bundles and minifies with Rollup (or Rolldown in newer versions), producing hashed assets you can deploy to any static host.
+\`npm create vite@latest my-app -- --template react-ts\` scaffolds a project. Vite serves your source as native ES modules during development, so the server starts almost instantly and hot module replacement (HMR) updates only the changed module while preserving component state. Since Vite 8 (March 2026), Rolldown (Rust) replaces the old esbuild + Rollup pair for both dev and build, with Oxc handling parsing, transforms and minification; it needs Node 20.19+/22.12+ and understands tsconfig \`paths\` out of the box. For production it bundles and minifies, producing hashed assets you can deploy to any static host.
 
 Key files: \`index.html\` (the real entry, it loads \`src/main.tsx\`), \`vite.config.ts\` (plugins, aliases, proxy), \`tsconfig*.json\` (TypeScript settings). Environment variables prefixed with \`VITE_\` are exposed via \`import.meta.env\`; never put secrets there, they end up in the browser bundle.
 
 ### React Compiler
 
-The React Compiler is a build-time Babel plugin that analyses your components and hooks and inserts memoisation automatically. In practice it gives you what careful use of \`useMemo\`, \`useCallback\` and \`memo\` would, without writing them. It relies on your code following the **Rules of React**: pure render, no mutation of props/state, hooks called unconditionally. If a component breaks the rules, the compiler skips it rather than producing wrong code.
+The React Compiler (stable since 1.0, October 2025) is a build-time Babel plugin that analyses your components and hooks and inserts memoisation automatically. In practice it gives you what careful use of \`useMemo\`, \`useCallback\` and \`memo\` would, without writing them. It relies on your code following the **Rules of React**: pure render, no mutation of props/state, hooks called unconditionally. If a component breaks the rules, the compiler skips it rather than producing wrong code.
 
-You enable it by adding \`babel-plugin-react-compiler\` to the React plugin's Babel config in \`vite.config.ts\`. Frameworks like Next.js expose a config flag. Because it is opt-in per build, you can adopt it gradually.
+With \`@vitejs/plugin-react\` 6+ you enable it through \`@rolldown/plugin-babel\` and the \`reactCompilerPreset()\` exported by the React plugin (see the example). The old \`react({ babel: { plugins: [...] } })\` option was **removed** in v6, so older tutorials break. An experimental Rust port is available via \`react({ compiler: true })\` (optional peer dependency \`oxc-transform-react\`); treat it as experimental. Next.js exposes \`reactCompiler: true\` in \`next.config.ts\`. Because it is opt-in per build, you can adopt it gradually.
 
 ### ESLint
 
-\`eslint-plugin-react-hooks\` (its recommended config now includes compiler-powered rules) flags rule-of-hooks violations, missing effect dependencies, mutation during render, and patterns the compiler cannot optimise. Treat its warnings as lessons, not noise; suppressing \`exhaustive-deps\` is almost always hiding a stale-closure bug.
+\`eslint-plugin-react-hooks@latest\` with the **\`recommended-latest\`** preset (it includes the compiler-powered rules) flags rule-of-hooks violations, missing effect dependencies, mutation during render, and patterns the compiler cannot optimise. A violation only makes the compiler skip that one component. Treat its warnings as lessons, not noise; suppressing \`exhaustive-deps\` is almost always hiding a stale-closure bug.
 
 ### TypeScript, loosely at first
 
@@ -33,21 +33,16 @@ Start with \`.tsx\` files and let inference do most of the work. Type props with
       {
         title: 'vite.config.ts with the React Compiler',
         code: `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 
 export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
-  ],
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
   server: {
     proxy: { '/api': 'http://localhost:8080' }, // avoid CORS in dev
   },
 })`,
-        note: 'The compiler runs as a Babel plugin inside the React plugin. The proxy forwards `/api` calls to a local backend so the frontend can use relative URLs in every environment.',
+        note: 'With @vitejs/plugin-react 6+ the compiler runs through `@rolldown/plugin-babel` using `reactCompilerPreset()`; the old `react({ babel: ... })` option no longer exists. The proxy forwards `/api` calls to a local backend so the frontend can use relative URLs in every environment.',
       },
       {
         title: '❌ secret in VITE_ env vs ✅ server-side',
@@ -75,15 +70,15 @@ The fix moved geocoding behind a tiny server endpoint that held the key and adde
     ],
     exercise: {
       task: 'Create a new Vite React + TypeScript project, enable the React Compiler, add `lint` and `typecheck` scripts, and verify the compiler is active by opening React DevTools (compiled components show a "Memo ✨" badge).',
-      hint: 'Install `babel-plugin-react-compiler` as a dev dependency and register it in the React plugin options.',
+      hint: 'Install `@rolldown/plugin-babel`, `@babel/core` and `babel-plugin-react-compiler` as dev dependencies and add `babel({ presets: [reactCompilerPreset()] })` next to `react()`.',
       solution: `\`\`\`bash
 npm create vite@latest shop -- --template react-ts
 cd shop
 npm install
-npm install -D babel-plugin-react-compiler eslint-plugin-react-hooks
+npm install -D @rolldown/plugin-babel @babel/core babel-plugin-react-compiler eslint-plugin-react-hooks@latest
 \`\`\`
 
-Edit \`vite.config.ts\` as in the example above, then in \`package.json\`:
+Edit \`vite.config.ts\` as in the example above, use the \`recommended-latest\` preset of \`eslint-plugin-react-hooks\` in \`eslint.config.js\`, then in \`package.json\`:
 
 \`\`\`json
 "scripts": {

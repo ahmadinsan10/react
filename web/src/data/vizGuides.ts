@@ -122,7 +122,7 @@ function Page({ children }: { children: React.ReactNode }) {
 <Page><ResultList /></Page>
 \`\`\`
 
-With the React Compiler (stable for React 19), components and JSX are memoized automatically, so you rarely write \`memo\`/\`useMemo\` by hand. For context, split rarely-changing values (theme) from frequently-changing ones (cursor position), or use a store with selectors.`,
+With the React Compiler (stable 1.0; in Vite enable it with \`reactCompilerPreset\` + \`@rolldown/plugin-babel\`, in Next.js with \`reactCompiler: true\`), components and JSX are memoized automatically, so you rarely write \`memo\`/\`useMemo\` by hand. For context, split rarely-changing values (theme) from frequently-changing ones (cursor position), or use a store with selectors.`,
     realCase: {
       title: 'A dashboard that stuttered on every keystroke',
       story: `**Situation:** an analytics dashboard kept the filter text input's state in the top-level \`Dashboard\` component, which also rendered six heavy chart components.
@@ -830,7 +830,7 @@ The concept: strategies differ in **where** HTML is produced and **when**: in th
       'Play **Streaming**. The shell arrives almost immediately while slow data is still loading on the server; the rest streams in as a chunk and hydrates separately.',
       'Play **PPR**. The static shell is served like SSG while the dynamic data starts on the server in parallel, then streams into the holes. Compare its FCP with SSR and its freshness with SSG.',
     ],
-    inCode: `In the Next.js 16 App Router, these are mostly choices about data and caching rather than separate APIs:
+    inCode: `In the Next.js 16.4 App Router, these are mostly choices about data and caching rather than separate APIs:
 
 \`\`\`tsx
 // Static by default when there is no dynamic data (SSG-like)
@@ -845,7 +845,7 @@ export default async function Page() {
 </Suspense>
 \`\`\`
 
-With Cache Components enabled (\`cacheComponents: true\`), Next.js prerenders the static shell and streams any Suspense-wrapped dynamic parts (cookies, headers, uncached fetches) at request time: that is Partial Prerendering. Use \`'use cache'\` with \`cacheLife\`/\`cacheTag\` to make data static, and \`revalidateTag\` after mutations. Pure CSR still fits authenticated dashboards where SEO does not matter.`,
+With Cache Components enabled (\`cacheComponents: true\`, on by default in new \`create-next-app\` projects since 16.4), Next.js prerenders the static shell and streams any Suspense-wrapped dynamic parts (cookies, headers, uncached fetches) at request time: that is Partial Prerendering. Use \`'use cache'\` with \`cacheLife\`/\`cacheTag\` to make data static, and \`revalidateTag\` after mutations. Pure CSR still fits authenticated dashboards where SEO does not matter.`,
     realCase: {
       title: 'A product page that waited on its slowest widget',
       story: `**Situation:** an e-commerce product page was server-rendered per request and awaited product details, price, stock, recommendations and reviews before returning any HTML.
@@ -949,7 +949,7 @@ Other ways XSS sneaks past React's escaping:
 - Serializing data into a \`<script>\` tag for hydration without escaping \`</script>\`.
 - Server-side rendering of markdown into HTML without sanitizing.
 
-Add a Content-Security-Policy as defence in depth, and sanitize on the server where possible.`,
+Add a Content-Security-Policy as defence in depth (with \`require-trusted-types-for 'script'\`, React 19.3 accepts \`TrustedHTML\` from your sanitizing policy), and sanitize on the server where possible.`,
     realCase: {
       title: 'A support chat that leaked agent sessions',
       story: `**Situation:** a help-desk widget let customers send messages with simple formatting. To show bold and links, the agent dashboard rendered messages with \`dangerouslySetInnerHTML\` and a hand-written regex that removed \`<script>\` tags.

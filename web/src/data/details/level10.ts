@@ -13,7 +13,7 @@ const details: Record<string, TopicDetail> = {
 
 ### Partial Prerendering (PPR)
 
-PPR combines SSG and streaming in a single route: everything that does not depend on the request (layout, navigation, product description) is prerendered into a **static shell** served from the edge, while request-dependent holes (cart count, personalised recommendations) are wrapped in Suspense and streamed from the server in the same response. In Next.js 16 this model is what Cache Components builds on: cached parts become part of the shell, uncached dynamic parts become streamed holes. Confirm the exact configuration flag in the current Next.js docs, since the naming has moved between releases.
+PPR combines SSG and streaming in a single route: everything that does not depend on the request (layout, navigation, product description) is prerendered into a **static shell** served from the edge, while request-dependent holes (cart count, personalised recommendations) are wrapped in Suspense and streamed from the server in the same response. In Next.js 16 this model is what Cache Components builds on: cached parts become part of the shell, uncached dynamic parts become streamed holes. Enable it with \`cacheComponents: true\` and \`partialPrefetching: true\` in \`next.config.ts\`. Since Next.js 16.4 this is recommended for every app and on by default in new \`create-next-app\` projects; it becomes the default in Next.js 17.
 
 ### How to choose
 
@@ -160,6 +160,8 @@ A file marked \`'use client'\` declares a **boundary**: that module and everythi
 1. **Props crossing server to client must be serializable**: strings, numbers, plain objects, arrays, Dates, Maps/Sets, promises, JSX, and Server Functions. Not class instances, not arbitrary functions.
 2. **A Client Component cannot import a Server Component**: the import would pull it into the client bundle. Instead, a Server Component renders the Client Component and passes server-rendered JSX in as \`children\` or another prop. The client receives already-rendered output, a "hole" it can place anywhere.
 3. **Push \`'use client'\` to the leaves.** Marking a whole layout as client drags every child into the bundle. Mark just the button, the dropdown, the chart.
+4. **Context from the server (React 19.3)**: a Server Component can render a Context created in a \`'use client'\` module directly, e.g. \`<UserContext value={user}>{children}</UserContext>\`, without a wrapper provider component.
+5. **Client-only pieces**: inside a Client Component, \`use(browser())\` (from \`react-dom\`, React 19.3) skips server rendering for that component; the HTML contains the nearest Suspense fallback and the component renders normally in the browser.
 
 ### Under the hood
 
@@ -462,7 +464,7 @@ Export \`metadata\` or \`generateMetadata\` from pages/layouts for titles, Open 
 
 ### proxy.ts
 
-Next.js 16 renamed \`middleware.ts\` to \`proxy.ts\` (exporting a \`proxy\` function). It runs before routing for matched paths: redirects, rewrites, setting headers, coarse auth gating, A/B bucketing. Keep it light; it runs on every matched request. Do **not** treat it as your only auth check: data access and Server Functions must still verify the session. Check the current docs for runtime defaults and the codemod for migrating.`,
+Next.js 16 renamed \`middleware.ts\` to \`proxy.ts\` (exporting a \`proxy\` function). It runs before routing for matched paths: redirects, rewrites, setting headers, coarse auth gating, A/B bucketing. Keep it light; it runs on every matched request. Do **not** treat it as your only auth check: data access and Server Functions must still verify the session. Since Next.js 16.4, \`proxy.ts\` runs on the Node.js runtime by default; \`middleware.ts\` is deprecated (it still works, mainly for Edge cases).`,
     examples: [
       {
         title: 'A segment with layout, loading, error and not-found',
@@ -575,7 +577,7 @@ Plus an error.tsx with 'use client' and a reset button as in the example above.`
 
 ### Dynamic by default
 
-When Cache Components is enabled (a flag in \`next.config\`; check the current docs for its exact name), nothing is cached unless you say so. Data fetching runs at request time. To keep the page fast, any uncached, request-time work must sit inside a \`<Suspense>\` boundary: the prerendered **static shell** is served immediately and the dynamic holes stream in. If uncached data is accessed outside Suspense, Next.js reports an error at build/dev time so you make a conscious choice.
+When Cache Components is enabled (\`cacheComponents: true\` in \`next.config.ts\`, usually with \`partialPrefetching: true\`; on by default in new \`create-next-app\` projects since 16.4), nothing is cached unless you say so. Data fetching runs at request time. To keep the page fast, any uncached, request-time work must sit inside a \`<Suspense>\` boundary: the prerendered **static shell** is served immediately and the dynamic holes stream in. If uncached data is accessed outside Suspense, Next.js reports an error at build/dev time so you make a conscious choice.
 
 ### Opting in: 'use cache'
 
@@ -591,6 +593,11 @@ Tag entries with \`cacheTag('product-42', 'products')\`. After a mutation:
 
 - \`updateTag(tag)\` (Server Actions only) expires the entry and makes the next read in the same request wait for fresh data: **read-your-own-writes**, ideal when the user must immediately see their change.
 - \`revalidateTag(tag, profile)\` marks entries stale with stale-while-revalidate semantics: the next visitor may still see old data while it refreshes. Good for content where eventual consistency is fine, or from Route Handlers and webhooks.
+
+### Guarding the static parts (Next.js 16.4)
+
+- \`export const ensureStatic = 'shell'\` (or \`'navigation'\` / \`'prefetch'\`) in a page or layout fails the build if dynamic content sneaks into that stage.
+- \`await navigation()\` and \`await prefetch()\` from \`'next/cache'\` defer cached work out of the shell or out of a prefetch.
 
 ### Recognising the old model
 
@@ -739,7 +746,7 @@ This gives you one place to audit security, add caching (\`'use cache'\` on func
 
 ### Framework alternatives
 
-Next.js is not the only RSC-era option. **React Router framework mode** (the successor of Remix) uses route modules with \`loader\` and \`action\` functions, strong progressive enhancement and web-standard Request/Response. **TanStack Start** builds on TanStack Router with end-to-end type-safe server functions and flexible SSR. Choose based on team familiarity, hosting, and how much you want the framework to own caching and data.`,
+Next.js is not the only RSC-era option. **React Router framework mode** (v8, the successor of Remix; import from \`react-router\`, since \`react-router-dom\` was removed, and middleware is on by default) uses route modules with \`loader\` and \`action\` functions, strong progressive enhancement and web-standard Request/Response. **TanStack Start** builds on TanStack Router with end-to-end type-safe server functions and flexible SSR. Choose based on team familiarity, hosting, and how much you want the framework to own caching and data.`,
     examples: [
       {
         title: 'A server-only data access layer',

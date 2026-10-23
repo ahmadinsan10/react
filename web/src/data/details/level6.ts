@@ -753,7 +753,15 @@ Changing a CSS property can trigger up to three stages: **layout** (geometry), *
 - **CSS keyframes**: looping or multi-step effects (spinners, skeleton shimmer).
 - **Web Animations API** (\`element.animate()\`): imperative control, still compositor-friendly.
 - **Motion** (formerly Framer Motion): declarative \`<motion.div animate>\`, spring physics, gestures, **exit animations** via \`AnimatePresence\` (React normally removes elements immediately), and **layout animations** (\`layout\` prop) that use the FLIP technique to animate position and size changes with transforms.
-- **View Transitions API**: \`document.startViewTransition(() => update())\` snapshots the old and new state and cross-fades or morphs between them. Great for route changes and list reorders. React has an experimental \`<ViewTransition>\` component; routers such as React Router offer a \`viewTransition\` option.
+- **View Transitions API**: \`document.startViewTransition(() => update())\` snapshots the old and new state and cross-fades or morphs between them. Great for route changes and list reorders. In React, use the stable \`<ViewTransition>\` component (below); routers such as React Router offer a \`viewTransition\` option.
+
+### React \`<ViewTransition>\` (stable since React 19.3)
+Import it from \`'react'\` and wrap the part of the tree that should animate. React calls the browser API for you and animates four cases: **enter** (inserted), **exit** (removed), **update** (its DOM changed) and **share** (an element with the same \`name\` leaves in one place and appears in another).
+- **Only Transition updates animate**: \`startTransition\`, a \`<Suspense>\` reveal or \`useDeferredValue\`. A plain urgent \`setState\` updates instantly.
+- The default is a cross-fade. Customize with **View Transition Classes** passed to \`enter\`, \`exit\`, \`update\`, \`share\` or \`default\` (e.g. \`default="none"\`, \`update="auto"\`) and target them in CSS with \`::view-transition-old(.cls)\` / \`::view-transition-new(.cls)\`; or use the \`onEnter\`/\`onExit\`/\`onShare\`/\`onUpdate\` callbacks.
+- \`addTransitionType('next')\` inside \`startTransition\` lets \`enter\`/\`exit\` take a map such as \`{ next: 'from-right', previous: 'from-left' }\`; CSS can also match \`:active-view-transition-type(next)\`.
+- Wrapping a \`<Suspense>\` in \`<ViewTransition>\` animates fallback → content.
+- Enter/exit only animate when the \`<ViewTransition>\` is the first thing rendered in its subtree, before any DOM node. Shared \`name\`s must be unique on the page.
 
 ### FLIP in one paragraph
 First: measure the element's old position. Last: apply the change and measure the new position. Invert: apply a transform so it looks like it is still at the old position. Play: animate the transform back to zero. Layout changes become cheap transform animations. Motion's \`layout\` prop does this for you.
@@ -815,15 +823,37 @@ export function ToastStack({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id:
         note: 'AnimatePresence keeps removed items mounted until their exit finishes; layout makes the remaining toasts slide into place with FLIP. Stable keys are required for both.',
       },
       {
-        title: '✅ View Transition for a list sort',
-        code: `function sortBy(field: 'name' | 'price') {
-  const update = () => flushSync(() => setSort(field))
-  if (!document.startViewTransition) return update()
-  document.startViewTransition(update)
+        title: '✅ React <ViewTransition>: directional slide with transition types',
+        code: `import { ViewTransition, addTransitionType, startTransition, useState } from 'react'
+
+export function Gallery({ photos }: { photos: Photo[] }) {
+  const [index, setIndex] = useState(0)
+  function go(dir: 'next' | 'previous') {
+    startTransition(() => {
+      addTransitionType(dir)
+      setIndex(i => (i + (dir === 'next' ? 1 : photos.length - 1)) % photos.length)
+    })
+  }
+  const photo = photos[index]
+  return (
+    <>
+      <ViewTransition
+        key={photo.id}
+        enter={{ next: 'from-right', previous: 'from-left' }}
+        exit={{ next: 'to-left', previous: 'to-right' }}
+      >
+        <img src={photo.src} alt={photo.alt} />
+      </ViewTransition>
+      <button onClick={() => go('previous')}>Previous</button>
+      <button onClick={() => go('next')}>Next</button>
+    </>
+  )
 }
-/* CSS: each row gets a unique name so it morphs to its new position
-   .row { view-transition-name: var(--vt-name); }  (set --vt-name per row in style) */`,
-        note: 'flushSync ensures React commits the DOM change inside the transition callback, so the browser captures the correct new snapshot.',
+/* CSS: ::view-transition-new(.from-right) { animation: slide-in-right 250ms ease-out; }
+   @media (prefers-reduced-motion: reduce) {
+     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+   } */`,
+        note: 'Changing the key exits the old image and enters the new one; only updates inside startTransition animate. addTransitionType picks the direction class. Disable the animation under prefers-reduced-motion.',
       },
     ],
     realCase: {
@@ -988,7 +1018,8 @@ export default preview`,
       task: 'Write stories for a `UserCard` that fetches `/api/users/:id`: Loading, Success, NotFound (404) and ServerError (500), using MSW handlers per story. Add a play function to the Success story asserting the user name heading is visible.',
       hint: 'With msw-storybook-addon, put handlers in parameters.msw.handlers. Use delay("infinite") for the loading state.',
       solution: `\`\`\`tsx
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse } from 'msw'
+import { delay } from 'msw/utils'
 import { expect, within } from 'storybook/test'
 
 const meta = { component: UserCard, args: { id: '42' } } satisfies Meta<typeof UserCard>
